@@ -416,7 +416,7 @@ export default function Home() {
                 {profile.name}
               </h1>
               {profile.isVerified && (
-                <BadgeCheck className="w-4 h-4 text-primary fill-primary/20" />
+                <BadgeCheck className="w-4 h-4 text-primary fill-primary/20 -mt-0.5" />
               )}
             </div>
           </div>
