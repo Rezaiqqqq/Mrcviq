@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { type Profile, type SocialLink, type Post } from "@shared/schema";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MapPin, Globe, BadgeCheck, Calendar, Sun, Moon, Music, Pause, Play, Users } from "lucide-react";
+import { MapPin, Globe, BadgeCheck, Calendar, Sun, Moon, Music, Pause, Play, Users, Volume2, VolumeX } from "lucide-react";
 import {
   SiInstagram, SiX, SiTiktok, SiYoutube, SiSnapchat,
   SiLinkedin, SiGithub, SiDiscord, SiTelegram, SiFacebook,
@@ -36,6 +36,7 @@ function FloatingOrbs() {
 function MusicPlayer({ musicUrl, musicTitle }: { musicUrl: string; musicTitle: string }) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
@@ -78,6 +79,13 @@ function MusicPlayer({ musicUrl, musicTitle }: { musicUrl: string; musicTitle: s
     }
   };
 
+  const toggleMute = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.muted = !audio.muted;
+    setIsMuted(!isMuted);
+  };
+
   return (
     <div className="animate-fade-up" style={{ animationDelay: "250ms" }}>
       <audio ref={audioRef} src={musicUrl} preload="metadata" />
@@ -85,7 +93,7 @@ function MusicPlayer({ musicUrl, musicTitle }: { musicUrl: string; musicTitle: s
         <button
           onClick={toggle}
           data-testid="button-music-toggle"
-          className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center transition-all active:scale-90"
+          className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center transition-all active:scale-90 flex-shrink-0"
         >
           {isPlaying ? (
             <Pause className="w-4 h-4 text-primary" />
@@ -105,7 +113,18 @@ function MusicPlayer({ musicUrl, musicTitle }: { musicUrl: string; musicTitle: s
             />
           </div>
         </div>
-        {isPlaying && (
+        <button
+          onClick={toggleMute}
+          data-testid="button-music-mute"
+          className="w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-90 flex-shrink-0"
+        >
+          {isMuted ? (
+            <VolumeX className="w-4 h-4 text-muted-foreground" />
+          ) : (
+            <Volume2 className="w-4 h-4 text-muted-foreground" />
+          )}
+        </button>
+        {isPlaying && !isMuted && (
           <div className="flex items-end gap-[2px] h-4">
             <span className="music-bar bar-1" />
             <span className="music-bar bar-2" />
@@ -201,8 +220,7 @@ function VisitorCounter({ count }: { count: number }) {
   return (
     <div className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground/60 animate-fade-up" style={{ animationDelay: "400ms" }}>
       <Users className="w-3 h-3" />
-      <span data-testid="text-visitor-count">{count.toLocaleString()}</span>
-      <span>زائر</span>
+      <span data-testid="text-visitor-count">{count.toLocaleString("en-US")}</span>
     </div>
   );
 }
