@@ -315,6 +315,7 @@ function VisitorCounter({ count }: { count: number }) {
 
 function LoadingScreen({ onFinish }: { onFinish: () => void }) {
   const [progress, setProgress] = useState(0);
+  const [fadeOut, setFadeOut] = useState(false);
   const { theme } = useTheme();
 
   useEffect(() => {
@@ -333,7 +334,10 @@ function LoadingScreen({ onFinish }: { onFinish: () => void }) {
         loaded++;
         setProgress(Math.round((loaded / total) * 100));
         if (loaded >= total) {
-          setTimeout(onFinish, 400);
+          setTimeout(() => {
+            setFadeOut(true);
+            setTimeout(onFinish, 600);
+          }, 300);
         }
       };
       img.src = src;
@@ -341,21 +345,43 @@ function LoadingScreen({ onFinish }: { onFinish: () => void }) {
   }, [onFinish]);
 
   return (
-    <div className="fixed inset-0 z-[200] bg-background flex flex-col items-center justify-center gap-6 animate-loader-screen">
-      <div className="relative w-20 h-20 rounded-full overflow-hidden ring-2 ring-primary/30 animate-pulse">
-        <img
-          src={theme === "dark" ? PROFILE.avatarDarkUrl : PROFILE.avatarUrl}
-          alt="loading"
-          className="w-full h-full object-cover"
-        />
+    <div className={`fixed inset-0 z-[200] bg-background flex flex-col items-center justify-center transition-all duration-500 ${fadeOut ? "opacity-0 scale-110 blur-sm" : "opacity-100 scale-100"}`}>
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="loader-glow loader-glow-1" />
+        <div className="loader-glow loader-glow-2" />
       </div>
-      <div className="w-48 h-1 bg-muted rounded-full overflow-hidden">
-        <div
-          className="h-full bg-primary rounded-full transition-all duration-300 ease-out"
-          style={{ width: `${progress}%` }}
-        />
+
+      <div className="relative z-10 flex flex-col items-center gap-8">
+        <div className="relative">
+          <div className="absolute -inset-3 rounded-full loader-ring-spin" />
+          <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden ring-[3px] ring-background shadow-2xl loader-avatar-float">
+            <img
+              src={theme === "dark" ? PROFILE.avatarDarkUrl : PROFILE.avatarUrl}
+              alt="loading"
+              className="w-full h-full object-cover"
+            />
+          </div>
+        </div>
+
+        <div className="flex flex-col items-center gap-3">
+          <h2 className="text-lg font-bold text-foreground loader-text-reveal" style={{ fontFamily: "'Poppins', sans-serif" }}>
+            {PROFILE.name}
+          </h2>
+          <div className="w-52 h-[3px] bg-muted/50 rounded-full overflow-hidden backdrop-blur-sm">
+            <div
+              className="h-full rounded-full transition-all duration-500 ease-out loader-bar-glow"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground/70">
+            <div className="loader-dots flex gap-1">
+              <span className="w-1 h-1 rounded-full bg-primary/60 loader-dot-1" />
+              <span className="w-1 h-1 rounded-full bg-primary/60 loader-dot-2" />
+              <span className="w-1 h-1 rounded-full bg-primary/60 loader-dot-3" />
+            </div>
+          </div>
+        </div>
       </div>
-      <p className="text-xs text-muted-foreground font-arabic">{progress}%</p>
     </div>
   );
 }
