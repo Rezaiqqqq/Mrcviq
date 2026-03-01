@@ -1,21 +1,19 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { type Profile, type SocialLink, type Post } from "@shared/schema";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import {
   User, Link2, Newspaper, Settings, LogOut, Plus, Trash2,
-  Pin, Image, ExternalLink, ChevronRight, BadgeCheck
+  Pin, Upload, ExternalLink, BadgeCheck, Eye, Palette, Lock,
+  Camera, ImagePlus, Save, ChevronLeft
 } from "lucide-react";
 import {
   SiInstagram, SiX, SiTiktok, SiYoutube, SiSnapchat,
@@ -39,18 +37,107 @@ const PLATFORM_COLORS: Record<string, string> = {
   threads: "#000000", twitch: "#9146FF", pinterest: "#E60023",
 };
 
-const PLATFORMS = ["instagram", "x", "tiktok", "youtube", "snapchat", "linkedin", "github", "discord", "telegram", "facebook", "whatsapp", "threads", "twitch", "pinterest", "other"];
+const PLATFORMS = ["instagram", "x", "tiktok", "youtube", "snapchat", "linkedin", "github", "discord", "telegram", "facebook", "whatsapp", "threads", "twitch", "pinterest"];
+
+type Tab = "profile" | "social" | "posts" | "settings";
+
+const NAV_ITEMS: { id: Tab; label: string; icon: React.ElementType }[] = [
+  { id: "profile", label: "الملف الشخصي", icon: User },
+  { id: "social", label: "حسابات التواصل", icon: Link2 },
+  { id: "posts", label: "الأخبار", icon: Newspaper },
+  { id: "settings", label: "الإعدادات", icon: Settings },
+];
+
+function ImageUploader({ currentUrl, onUpload, label }: { currentUrl: string; onUpload: (url: string) => void; label: string }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const handleFile = useCallback(async (file: File) => {
+    setUploading(true);
+    try {
+      const pwd = sessionStorage.getItem("admin_auth") || "";
+      const formData = new FormData();
+      formData.append("image", file);
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+        headers: { "x-admin-password": pwd },
+      });
+      const data = await res.json();
+      if (data.url) onUpload(data.url);
+    } catch {
+    } finally {
+      setUploading(false);
+    }
+  }, [onUpload]);
+
+  return (
+    <div className="space-y-2">
+      <Label className="text-xs text-muted-foreground">{label}</Label>
+      <div className="flex items-center gap-3">
+        <div className="relative w-16 h-16 rounded-2xl overflow-hidden bg-muted border border-border/50 flex-shrink-0">
+          {currentUrl && <img src={currentUrl} alt="" className="w-full h-full object-cover" />}
+          {uploading && (
+            <div className="absolute inset-0 bg-background/70 flex items-center justify-center">
+              <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            </div>
+          )}
+        </div>
+        <div className="flex-1 space-y-1.5">
+          <Input
+            value={currentUrl}
+            onChange={e => onUpload(e.target.value)}
+            placeholder="رابط الصورة"
+            dir="ltr"
+            className="text-xs h-9 rounded-xl bg-muted/50 border-border/30"
+          />
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])}
+          />
+          <Button
+            variant="secondary"
+            size="sm"
+            className="h-8 text-xs rounded-xl w-full"
+            onClick={() => inputRef.current?.click()}
+            disabled={uploading}
+          >
+            <Camera className="w-3.5 h-3.5 ml-1.5" />
+            {uploading ? "جاري الرفع..." : "رفع من الجهاز"}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SectionCard({ title, children, icon: Icon }: { title: string; children: React.ReactNode; icon?: React.ElementType }) {
+  return (
+    <div className="bg-card/50 backdrop-blur-sm rounded-2xl border border-border/40 overflow-hidden">
+      <div className="px-5 py-4 border-b border-border/30 flex items-center gap-2.5">
+        {Icon && <Icon className="w-4 h-4 text-muted-foreground" />}
+        <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+      </div>
+      <div className="p-5">
+        {children}
+      </div>
+    </div>
+  );
+}
 
 export default function Dashboard() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const [adminPwd, setAdminPwd] = useState(() => sessionStorage.getItem("admin_auth") || "");
+  const [activeTab, setActiveTab] = useState<Tab>("profile");
+  const adminPwd = sessionStorage.getItem("admin_auth") || "";
 
   useEffect(() => {
     if (!adminPwd) setLocation("/admin");
   }, [adminPwd, setLocation]);
 
-  // Profile state
   const { data: profile } = useQuery<Profile>({ queryKey: ["/api/profile"] });
   const [profileForm, setProfileForm] = useState<Partial<Profile>>({});
   useEffect(() => { if (profile) setProfileForm(profile); }, [profile]);
@@ -59,12 +146,10 @@ export default function Dashboard() {
     mutationFn: (data: Partial<Profile>) => apiRequest("PATCH", "/api/profile", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/profile"] });
-      toast({ title: "تم الحفظ", description: "تم تحديث الملف الشخصي" });
+      toast({ title: "تم حفظ التغييرات بنجاح" });
     },
-    onError: () => toast({ title: "خطأ", description: "فشل في الحفظ", variant: "destructive" }),
   });
 
-  // Social Links
   const { data: socialLinks = [] } = useQuery<SocialLink[]>({ queryKey: ["/api/social-links"] });
   const [newLink, setNewLink] = useState({ platform: "instagram", url: "", displayName: "", color: "#E1306C", sortOrder: 0 });
 
@@ -73,19 +158,22 @@ export default function Dashboard() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/social-links"] });
       setNewLink({ platform: "instagram", url: "", displayName: "", color: "#E1306C", sortOrder: 0 });
-      toast({ title: "تم الإضافة" });
+      toast({ title: "تمت الإضافة" });
     },
-    onError: () => toast({ title: "خطأ", variant: "destructive" }),
   });
 
   const deleteLinkMutation = useMutation({
     mutationFn: (id: number) => apiRequest("DELETE", `/api/social-links/${id}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/api/social-links"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/social-links"] });
+      toast({ title: "تم الحذف" });
+    },
   });
 
-  // Posts
   const { data: posts = [] } = useQuery<Post[]>({ queryKey: ["/api/posts"] });
   const [newPost, setNewPost] = useState({ title: "", content: "", imageUrl: "", isPinned: false });
+  const postImageRef = useRef<HTMLInputElement>(null);
+  const [postImageUploading, setPostImageUploading] = useState(false);
   const [editPost, setEditPost] = useState<Post | null>(null);
 
   const addPostMutation = useMutation({
@@ -95,7 +183,6 @@ export default function Dashboard() {
       setNewPost({ title: "", content: "", imageUrl: "", isPinned: false });
       toast({ title: "تم النشر" });
     },
-    onError: () => toast({ title: "خطأ", variant: "destructive" }),
   });
 
   const updatePostMutation = useMutation({
@@ -105,7 +192,6 @@ export default function Dashboard() {
       setEditPost(null);
       toast({ title: "تم التحديث" });
     },
-    onError: () => toast({ title: "خطأ", variant: "destructive" }),
   });
 
   const deletePostMutation = useMutation({
@@ -113,533 +199,648 @@ export default function Dashboard() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/api/posts"] }),
   });
 
-  // Password change
   const [pwdForm, setPwdForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
   const changePwdMutation = useMutation({
     mutationFn: (data: { currentPassword: string; newPassword: string }) => apiRequest("POST", "/api/admin/change-password", data),
     onSuccess: () => {
       toast({ title: "تم تغيير كلمة المرور" });
       sessionStorage.setItem("admin_auth", pwdForm.newPassword);
-      setAdminPwd(pwdForm.newPassword);
       setPwdForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
     },
-    onError: () => toast({ title: "خطأ", description: "كلمة المرور الحالية خاطئة", variant: "destructive" }),
+    onError: () => toast({ title: "كلمة المرور الحالية خاطئة", variant: "destructive" }),
   });
 
+  const handlePostImageUpload = async (file: File) => {
+    setPostImageUploading(true);
+    try {
+      const pwd = sessionStorage.getItem("admin_auth") || "";
+      const formData = new FormData();
+      formData.append("image", file);
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+        headers: { "x-admin-password": pwd },
+      });
+      const data = await res.json();
+      if (data.url) {
+        if (editPost) {
+          setEditPost(p => p ? { ...p, imageUrl: data.url } : p);
+        } else {
+          setNewPost(p => ({ ...p, imageUrl: data.url }));
+        }
+      }
+    } catch {} finally {
+      setPostImageUploading(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-background" dir="rtl">
-      {/* Header */}
-      <div className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-md">
-        <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
+    <div className="min-h-screen bg-background flex" dir="rtl">
+      {/* Sidebar */}
+      <aside className="hidden md:flex flex-col w-64 border-l border-border/40 bg-card/30 backdrop-blur-sm shrink-0">
+        <div className="p-5 border-b border-border/30">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Settings className="w-4 h-4 text-primary" />
+            <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center">
+              <Settings className="w-5 h-5 text-primary" />
             </div>
-            <span className="font-bold text-foreground">لوحة التحكم</span>
+            <div>
+              <h2 className="text-sm font-bold text-foreground">لوحة التحكم</h2>
+              <p className="text-[11px] text-muted-foreground">إدارة الموقع</p>
+            </div>
           </div>
+        </div>
+
+        <nav className="flex-1 p-3 space-y-1">
+          {NAV_ITEMS.map(item => (
+            <button
+              key={item.id}
+              data-testid={`nav-${item.id}`}
+              onClick={() => setActiveTab(item.id)}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                activeTab === item.id
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              }`}
+            >
+              <item.icon className="w-4 h-4" />
+              {item.label}
+            </button>
+          ))}
+        </nav>
+
+        <div className="p-3 space-y-1 border-t border-border/30">
+          <a
+            href="/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
+          >
+            <Eye className="w-4 h-4" />
+            عرض الموقع
+          </a>
+          <button
+            data-testid="button-logout"
+            onClick={() => {
+              sessionStorage.removeItem("admin_auth");
+              setLocation("/admin");
+            }}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-destructive/70 hover:text-destructive hover:bg-destructive/5 transition-all"
+          >
+            <LogOut className="w-4 h-4" />
+            تسجيل الخروج
+          </button>
+        </div>
+      </aside>
+
+      {/* Mobile Header */}
+      <div className="md:hidden fixed top-0 inset-x-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/40">
+        <div className="flex items-center justify-between px-4 h-14">
           <div className="flex items-center gap-2">
+            <Settings className="w-4 h-4 text-primary" />
+            <span className="text-sm font-bold">لوحة التحكم</span>
+          </div>
+          <div className="flex items-center gap-1">
             <a href="/" target="_blank" rel="noopener noreferrer">
-              <Button variant="ghost" size="sm" data-testid="button-view-site">
-                <ExternalLink className="w-4 h-4 ml-1" />
-                عرض الموقع
-              </Button>
+              <Button variant="ghost" size="icon"><Eye className="w-4 h-4" /></Button>
             </a>
             <Button
               variant="ghost"
-              size="sm"
-              data-testid="button-logout"
-              onClick={() => {
-                sessionStorage.removeItem("admin_auth");
-                setLocation("/admin");
-              }}
+              size="icon"
+              onClick={() => { sessionStorage.removeItem("admin_auth"); setLocation("/admin"); }}
             >
-              <LogOut className="w-4 h-4 ml-1" />
-              خروج
+              <LogOut className="w-4 h-4" />
             </Button>
           </div>
         </div>
+        <div className="flex px-2 pb-2 gap-1 overflow-x-auto no-scrollbar">
+          {NAV_ITEMS.map(item => (
+            <button
+              key={item.id}
+              onClick={() => setActiveTab(item.id)}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap transition-all ${
+                activeTab === item.id
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground"
+              }`}
+            >
+              <item.icon className="w-3.5 h-3.5" />
+              {item.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <Tabs defaultValue="profile">
-          <TabsList className="w-full grid grid-cols-4 mb-8">
-            <TabsTrigger value="profile" data-testid="tab-profile">
-              <User className="w-4 h-4 ml-1.5" />
-              الملف
-            </TabsTrigger>
-            <TabsTrigger value="social" data-testid="tab-social">
-              <Link2 className="w-4 h-4 ml-1.5" />
-              السوشيال
-            </TabsTrigger>
-            <TabsTrigger value="posts" data-testid="tab-posts">
-              <Newspaper className="w-4 h-4 ml-1.5" />
-              الأخبار
-            </TabsTrigger>
-            <TabsTrigger value="settings" data-testid="tab-settings">
-              <Settings className="w-4 h-4 ml-1.5" />
-              الإعدادات
-            </TabsTrigger>
-          </TabsList>
+      {/* Main Content */}
+      <main className="flex-1 min-h-screen overflow-y-auto">
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8 md:py-10 mt-[7rem] md:mt-0">
 
-          {/* Profile Tab */}
-          <TabsContent value="profile" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">معلومات الملف الشخصي</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">الاسم</Label>
-                    <Input
-                      id="name"
-                      value={profileForm.name || ""}
-                      onChange={e => setProfileForm(p => ({ ...p, name: e.target.value }))}
-                      data-testid="input-profile-name"
-                    />
+            <div
+              key={activeTab}
+              className="space-y-6 animate-fade-up"
+            >
+              {/* Profile Tab */}
+              {activeTab === "profile" && (
+                <>
+                  <div className="mb-2">
+                    <h1 className="text-lg font-bold text-foreground">الملف الشخصي</h1>
+                    <p className="text-xs text-muted-foreground mt-0.5">عدّل معلوماتك الشخصية</p>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="username">اليوزر</Label>
-                    <Input
-                      id="username"
-                      value={profileForm.username || ""}
-                      onChange={e => setProfileForm(p => ({ ...p, username: e.target.value }))}
-                      data-testid="input-profile-username"
-                      dir="ltr"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="bio">النبذة التعريفية</Label>
-                  <Textarea
-                    id="bio"
-                    rows={3}
-                    value={profileForm.bio || ""}
-                    onChange={e => setProfileForm(p => ({ ...p, bio: e.target.value }))}
-                    placeholder="اكتب نبذة عنك..."
-                    data-testid="input-profile-bio"
-                  />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="location">الموقع</Label>
-                    <Input
-                      id="location"
-                      value={profileForm.location || ""}
-                      onChange={e => setProfileForm(p => ({ ...p, location: e.target.value }))}
-                      placeholder="المدينة، الدولة"
-                      data-testid="input-profile-location"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="website">الموقع الإلكتروني</Label>
-                    <Input
-                      id="website"
-                      value={profileForm.website || ""}
-                      onChange={e => setProfileForm(p => ({ ...p, website: e.target.value }))}
-                      placeholder="https://example.com"
-                      data-testid="input-profile-website"
-                      dir="ltr"
-                    />
-                  </div>
-                </div>
-                <Separator />
-                <div className="space-y-2">
-                  <Label htmlFor="avatarUrl">رابط الصورة الشخصية</Label>
-                  <Input
-                    id="avatarUrl"
-                    value={profileForm.avatarUrl || ""}
-                    onChange={e => setProfileForm(p => ({ ...p, avatarUrl: e.target.value }))}
-                    placeholder="https://... أو /images/..."
-                    data-testid="input-profile-avatar"
-                    dir="ltr"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="bannerUrl">رابط صورة البنر</Label>
-                  <Input
-                    id="bannerUrl"
-                    value={profileForm.bannerUrl || ""}
-                    onChange={e => setProfileForm(p => ({ ...p, bannerUrl: e.target.value }))}
-                    placeholder="https://... أو /images/banner.png"
-                    data-testid="input-profile-banner"
-                    dir="ltr"
-                  />
-                </div>
-                <Separator />
-                <div className="flex items-center justify-between gap-4 flex-wrap">
-                  <div className="flex items-center gap-3">
-                    <Switch
-                      id="hasStory"
-                      checked={profileForm.hasStory || false}
-                      onCheckedChange={v => setProfileForm(p => ({ ...p, hasStory: v }))}
-                      data-testid="switch-has-story"
-                    />
-                    <Label htmlFor="hasStory">دائرة الستوري</Label>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Switch
-                      id="isVerified"
-                      checked={profileForm.isVerified || false}
-                      onCheckedChange={v => setProfileForm(p => ({ ...p, isVerified: v }))}
-                      data-testid="switch-is-verified"
-                    />
-                    <div className="flex items-center gap-1.5">
-                      <Label htmlFor="isVerified">حساب موثق</Label>
-                      <BadgeCheck className="w-4 h-4 text-primary" />
-                    </div>
-                  </div>
-                </div>
-                <Button
-                  className="w-full"
-                  onClick={() => updateProfileMutation.mutate(profileForm)}
-                  disabled={updateProfileMutation.isPending}
-                  data-testid="button-save-profile"
-                >
-                  {updateProfileMutation.isPending ? "جاري الحفظ..." : "حفظ التغييرات"}
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
 
-          {/* Social Tab */}
-          <TabsContent value="social" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">إضافة حساب جديد</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>المنصة</Label>
-                    <select
-                      className="w-full h-9 px-3 rounded-md border border-input bg-background text-sm"
-                      value={newLink.platform}
-                      onChange={e => {
-                        const platform = e.target.value;
-                        setNewLink(p => ({
-                          ...p,
-                          platform,
-                          color: PLATFORM_COLORS[platform] || "#6366f1"
-                        }));
-                      }}
-                      data-testid="select-social-platform"
-                    >
-                      {PLATFORMS.map(p => (
-                        <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>اسم العرض</Label>
-                    <Input
-                      value={newLink.displayName}
-                      onChange={e => setNewLink(p => ({ ...p, displayName: e.target.value }))}
-                      placeholder="@اسمك"
-                      data-testid="input-social-displayname"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>الرابط</Label>
-                    <Input
-                      value={newLink.url}
-                      onChange={e => setNewLink(p => ({ ...p, url: e.target.value }))}
-                      placeholder="https://..."
-                      data-testid="input-social-url"
-                      dir="ltr"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>اللون</Label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="color"
-                        value={newLink.color}
-                        onChange={e => setNewLink(p => ({ ...p, color: e.target.value }))}
-                        className="w-9 h-9 rounded-md border border-input cursor-pointer"
-                        data-testid="input-social-color"
+                  <SectionCard title="الصور" icon={Camera}>
+                    <div className="space-y-5">
+                      <ImageUploader
+                        currentUrl={profileForm.avatarUrl || ""}
+                        onUpload={url => setProfileForm(p => ({ ...p, avatarUrl: url }))}
+                        label="الصورة الشخصية"
                       />
-                      <Input
-                        value={newLink.color}
-                        onChange={e => setNewLink(p => ({ ...p, color: e.target.value }))}
-                        dir="ltr"
-                        className="flex-1"
+                      <ImageUploader
+                        currentUrl={profileForm.bannerUrl || ""}
+                        onUpload={url => setProfileForm(p => ({ ...p, bannerUrl: url }))}
+                        label="صورة البنر"
                       />
                     </div>
-                  </div>
-                </div>
-                <Button
-                  className="w-full"
-                  onClick={() => addLinkMutation.mutate(newLink)}
-                  disabled={!newLink.url || !newLink.displayName || addLinkMutation.isPending}
-                  data-testid="button-add-social"
-                >
-                  <Plus className="w-4 h-4 ml-1" />
-                  إضافة
-                </Button>
-              </CardContent>
-            </Card>
+                  </SectionCard>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">الحسابات الحالية</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {socialLinks.length === 0 && (
-                  <p className="text-sm text-muted-foreground text-center py-4">لا توجد حسابات بعد</p>
-                )}
-                {socialLinks.map(link => {
-                  const Icon = PLATFORM_ICONS[link.platform.toLowerCase()] || Globe;
-                  return (
-                    <div
-                      key={link.id}
-                      data-testid={`social-item-${link.id}`}
-                      className="flex items-center gap-3 p-3 rounded-lg border border-border"
-                    >
-                      <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: link.color + "22" }}>
-                        <Icon className="w-4 h-4" style={{ color: link.color }} />
+                  <SectionCard title="المعلومات الأساسية" icon={User}>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                          <Label className="text-xs text-muted-foreground">الاسم</Label>
+                          <Input
+                            value={profileForm.name || ""}
+                            onChange={e => setProfileForm(p => ({ ...p, name: e.target.value }))}
+                            data-testid="input-profile-name"
+                            className="rounded-xl bg-muted/30 border-border/30"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs text-muted-foreground">اليوزر</Label>
+                          <Input
+                            value={profileForm.username || ""}
+                            onChange={e => setProfileForm(p => ({ ...p, username: e.target.value }))}
+                            data-testid="input-profile-username"
+                            dir="ltr"
+                            className="rounded-xl bg-muted/30 border-border/30"
+                          />
+                        </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{link.displayName}</p>
-                        <p className="text-xs text-muted-foreground truncate">{link.platform}</p>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs text-muted-foreground">النبذة</Label>
+                        <Textarea
+                          rows={3}
+                          value={profileForm.bio || ""}
+                          onChange={e => setProfileForm(p => ({ ...p, bio: e.target.value }))}
+                          data-testid="input-profile-bio"
+                          className="rounded-xl bg-muted/30 border-border/30 resize-none"
+                        />
                       </div>
-                      <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground">
-                        <ExternalLink className="w-3.5 h-3.5" />
-                      </a>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => deleteLinkMutation.mutate(link.id)}
-                        data-testid={`button-delete-social-${link.id}`}
-                        className="text-destructive"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                          <Label className="text-xs text-muted-foreground">الموقع الجغرافي</Label>
+                          <Input
+                            value={profileForm.location || ""}
+                            onChange={e => setProfileForm(p => ({ ...p, location: e.target.value }))}
+                            data-testid="input-profile-location"
+                            className="rounded-xl bg-muted/30 border-border/30"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs text-muted-foreground">الموقع الإلكتروني</Label>
+                          <Input
+                            value={profileForm.website || ""}
+                            onChange={e => setProfileForm(p => ({ ...p, website: e.target.value }))}
+                            data-testid="input-profile-website"
+                            dir="ltr"
+                            className="rounded-xl bg-muted/30 border-border/30"
+                          />
+                        </div>
+                      </div>
                     </div>
-                  );
-                })}
-              </CardContent>
-            </Card>
-          </TabsContent>
+                  </SectionCard>
 
-          {/* Posts Tab */}
-          <TabsContent value="posts" className="space-y-6">
-            {editPost ? (
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between gap-4">
-                    <CardTitle className="text-base">تعديل الخبر</CardTitle>
-                    <Button variant="ghost" size="sm" onClick={() => setEditPost(null)}>إلغاء</Button>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>العنوان</Label>
-                    <Input
-                      value={editPost.title}
-                      onChange={e => setEditPost(p => p ? { ...p, title: e.target.value } : p)}
-                      data-testid="input-edit-post-title"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>المحتوى</Label>
-                    <Textarea
-                      rows={4}
-                      value={editPost.content}
-                      onChange={e => setEditPost(p => p ? { ...p, content: e.target.value } : p)}
-                      data-testid="input-edit-post-content"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>رابط الصورة (اختياري)</Label>
-                    <Input
-                      value={editPost.imageUrl || ""}
-                      onChange={e => setEditPost(p => p ? { ...p, imageUrl: e.target.value } : p)}
-                      dir="ltr"
-                      data-testid="input-edit-post-image"
-                    />
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Switch
-                      checked={editPost.isPinned}
-                      onCheckedChange={v => setEditPost(p => p ? { ...p, isPinned: v } : p)}
-                      data-testid="switch-edit-post-pinned"
-                    />
-                    <Label>تثبيت الخبر</Label>
-                  </div>
+                  <SectionCard title="خيارات العرض" icon={Palette}>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between py-1">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-pink-500 via-red-500 to-yellow-500 flex items-center justify-center">
+                            <div className="w-5 h-5 rounded-full bg-background border-2 border-white" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium">دائرة الستوري</p>
+                            <p className="text-[11px] text-muted-foreground">إطار متحرك حول الصورة</p>
+                          </div>
+                        </div>
+                        <Switch
+                          checked={profileForm.hasStory || false}
+                          onCheckedChange={v => setProfileForm(p => ({ ...p, hasStory: v }))}
+                          data-testid="switch-has-story"
+                        />
+                      </div>
+                      <div className="flex items-center justify-between py-1">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
+                            <BadgeCheck className="w-4 h-4 text-primary" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium">شارة التوثيق</p>
+                            <p className="text-[11px] text-muted-foreground">علامة التوثيق بجانب الاسم</p>
+                          </div>
+                        </div>
+                        <Switch
+                          checked={profileForm.isVerified || false}
+                          onCheckedChange={v => setProfileForm(p => ({ ...p, isVerified: v }))}
+                          data-testid="switch-is-verified"
+                        />
+                      </div>
+                    </div>
+                  </SectionCard>
+
                   <Button
-                    className="w-full"
-                    onClick={() => updatePostMutation.mutate({ id: editPost.id, data: editPost })}
-                    disabled={updatePostMutation.isPending}
-                    data-testid="button-save-edit-post"
+                    className="w-full rounded-2xl text-sm font-semibold"
+                    onClick={() => updateProfileMutation.mutate(profileForm)}
+                    disabled={updateProfileMutation.isPending}
+                    data-testid="button-save-profile"
                   >
-                    حفظ التعديلات
+                    <Save className="w-4 h-4 ml-2" />
+                    {updateProfileMutation.isPending ? "جاري الحفظ..." : "حفظ جميع التغييرات"}
                   </Button>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">نشر خبر جديد</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>العنوان</Label>
-                    <Input
-                      value={newPost.title}
-                      onChange={e => setNewPost(p => ({ ...p, title: e.target.value }))}
-                      placeholder="عنوان الخبر"
-                      data-testid="input-new-post-title"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>المحتوى</Label>
-                    <Textarea
-                      rows={4}
-                      value={newPost.content}
-                      onChange={e => setNewPost(p => ({ ...p, content: e.target.value }))}
-                      placeholder="اكتب الخبر هنا..."
-                      data-testid="input-new-post-content"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>رابط الصورة (اختياري)</Label>
-                    <div className="flex items-center gap-2">
-                      <Image className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                      <Input
-                        value={newPost.imageUrl}
-                        onChange={e => setNewPost(p => ({ ...p, imageUrl: e.target.value }))}
-                        placeholder="https://..."
-                        dir="ltr"
-                        data-testid="input-new-post-image"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Switch
-                      checked={newPost.isPinned}
-                      onCheckedChange={v => setNewPost(p => ({ ...p, isPinned: v }))}
-                      data-testid="switch-new-post-pinned"
-                    />
-                    <Label>تثبيت الخبر</Label>
-                  </div>
-                  <Button
-                    className="w-full"
-                    onClick={() => addPostMutation.mutate(newPost)}
-                    disabled={!newPost.title || !newPost.content || addPostMutation.isPending}
-                    data-testid="button-publish-post"
-                  >
-                    <Newspaper className="w-4 h-4 ml-1" />
-                    {addPostMutation.isPending ? "جاري النشر..." : "نشر الخبر"}
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
+                </>
+              )}
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">الأخبار المنشورة</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {posts.length === 0 && (
-                  <p className="text-sm text-muted-foreground text-center py-4">لا توجد أخبار بعد</p>
-                )}
-                {posts.map(post => (
-                  <div
-                    key={post.id}
-                    data-testid={`post-item-${post.id}`}
-                    className="flex items-start gap-3 p-3 rounded-lg border border-border"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-sm font-medium truncate">{post.title}</p>
-                        {post.isPinned && <Badge variant="secondary" className="text-xs shrink-0"><Pin className="w-3 h-3 ml-1" />مثبت</Badge>}
+              {/* Social Tab */}
+              {activeTab === "social" && (
+                <>
+                  <div className="mb-2">
+                    <h1 className="text-lg font-bold text-foreground">حسابات التواصل</h1>
+                    <p className="text-xs text-muted-foreground mt-0.5">أضف روابط حساباتك على منصات التواصل</p>
+                  </div>
+
+                  <SectionCard title="إضافة حساب جديد" icon={Plus}>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-3 gap-2 flex-wrap">
+                        {PLATFORMS.map(p => {
+                          const Icon = PLATFORM_ICONS[p] || Globe;
+                          const isActive = newLink.platform === p;
+                          return (
+                            <button
+                              key={p}
+                              onClick={() => setNewLink(prev => ({ ...prev, platform: p, color: PLATFORM_COLORS[p] || "#6366f1" }))}
+                              data-testid={`platform-${p}`}
+                              className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium transition-all border ${
+                                isActive
+                                  ? "border-primary/30 bg-primary/8 text-primary"
+                                  : "border-border/30 bg-muted/20 text-muted-foreground hover:bg-muted/40"
+                              }`}
+                            >
+                              <Icon className="w-4 h-4 flex-shrink-0" style={{ color: isActive ? PLATFORM_COLORS[p] : undefined }} />
+                              <span className="truncate">{p.charAt(0).toUpperCase() + p.slice(1)}</span>
+                            </button>
+                          );
+                        })}
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{post.content}</p>
-                    </div>
-                    <div className="flex items-center gap-1 flex-shrink-0">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setEditPost(post)}
-                        data-testid={`button-edit-post-${post.id}`}
-                      >
-                        <ChevronRight className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => deletePostMutation.mutate(post.id)}
-                        data-testid={`button-delete-post-${post.id}`}
-                        className="text-destructive"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          </TabsContent>
 
-          {/* Settings Tab */}
-          <TabsContent value="settings" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">تغيير كلمة المرور</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>كلمة المرور الحالية</Label>
-                  <Input
-                    type="password"
-                    value={pwdForm.currentPassword}
-                    onChange={e => setPwdForm(p => ({ ...p, currentPassword: e.target.value }))}
-                    data-testid="input-current-password"
-                    dir="ltr"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>كلمة المرور الجديدة</Label>
-                  <Input
-                    type="password"
-                    value={pwdForm.newPassword}
-                    onChange={e => setPwdForm(p => ({ ...p, newPassword: e.target.value }))}
-                    data-testid="input-new-password"
-                    dir="ltr"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>تأكيد كلمة المرور</Label>
-                  <Input
-                    type="password"
-                    value={pwdForm.confirmPassword}
-                    onChange={e => setPwdForm(p => ({ ...p, confirmPassword: e.target.value }))}
-                    data-testid="input-confirm-password"
-                    dir="ltr"
-                  />
-                </div>
-                <Button
-                  className="w-full"
-                  onClick={() => {
-                    if (pwdForm.newPassword !== pwdForm.confirmPassword) {
-                      toast({ title: "خطأ", description: "كلمات المرور غير متطابقة", variant: "destructive" });
-                      return;
-                    }
-                    changePwdMutation.mutate({ currentPassword: pwdForm.currentPassword, newPassword: pwdForm.newPassword });
-                  }}
-                  disabled={!pwdForm.currentPassword || !pwdForm.newPassword || changePwdMutation.isPending}
-                  data-testid="button-change-password"
-                >
-                  {changePwdMutation.isPending ? "جاري التغيير..." : "تغيير كلمة المرور"}
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                          <Label className="text-xs text-muted-foreground">اسم العرض</Label>
+                          <Input
+                            value={newLink.displayName}
+                            onChange={e => setNewLink(p => ({ ...p, displayName: e.target.value }))}
+                            placeholder="@username"
+                            data-testid="input-social-displayname"
+                            className="rounded-xl bg-muted/30 border-border/30"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs text-muted-foreground">الرابط</Label>
+                          <Input
+                            value={newLink.url}
+                            onChange={e => setNewLink(p => ({ ...p, url: e.target.value }))}
+                            placeholder="https://..."
+                            dir="ltr"
+                            data-testid="input-social-url"
+                            className="rounded-xl bg-muted/30 border-border/30"
+                          />
+                        </div>
+                      </div>
+
+                      <Button
+                        className="w-full rounded-xl"
+                        onClick={() => addLinkMutation.mutate(newLink)}
+                        disabled={!newLink.url || !newLink.displayName || addLinkMutation.isPending}
+                        data-testid="button-add-social"
+                      >
+                        <Plus className="w-4 h-4 ml-1.5" />
+                        إضافة الحساب
+                      </Button>
+                    </div>
+                  </SectionCard>
+
+                  {socialLinks.length > 0 && (
+                    <SectionCard title={`الحسابات الحالية (${socialLinks.length})`} icon={Link2}>
+                      <div className="space-y-2">
+                        {socialLinks.map(link => {
+                          const Icon = PLATFORM_ICONS[link.platform.toLowerCase()] || Globe;
+                          return (
+                            <div
+                              key={link.id}
+                              data-testid={`social-item-${link.id}`}
+                              className="flex items-center gap-3 p-3 rounded-xl bg-muted/20 border border-border/20 transition-all"
+                            >
+                              <div
+                                className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                                style={{ backgroundColor: link.color + "15" }}
+                              >
+                                <Icon className="w-5 h-5" style={{ color: link.color }} />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium truncate">{link.displayName}</p>
+                                <p className="text-[11px] text-muted-foreground truncate">{link.platform}</p>
+                              </div>
+                              <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-muted-foreground/50 hover:text-muted-foreground transition-colors">
+                                <ExternalLink className="w-3.5 h-3.5" />
+                              </a>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => deleteLinkMutation.mutate(link.id)}
+                                data-testid={`button-delete-social-${link.id}`}
+                                className="text-destructive/50 hover:text-destructive"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </SectionCard>
+                  )}
+                </>
+              )}
+
+              {/* Posts Tab */}
+              {activeTab === "posts" && (
+                <>
+                  <div className="mb-2">
+                    <h1 className="text-lg font-bold text-foreground">الأخبار والمنشورات</h1>
+                    <p className="text-xs text-muted-foreground mt-0.5">انشر آخر أخبارك وتحديثاتك</p>
+                  </div>
+
+                  {editPost ? (
+                    <SectionCard title="تعديل الخبر" icon={Newspaper}>
+                      <div className="space-y-4">
+                        <div className="space-y-1.5">
+                          <Label className="text-xs text-muted-foreground">العنوان</Label>
+                          <Input
+                            value={editPost.title}
+                            onChange={e => setEditPost(p => p ? { ...p, title: e.target.value } : p)}
+                            data-testid="input-edit-post-title"
+                            className="rounded-xl bg-muted/30 border-border/30"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs text-muted-foreground">المحتوى</Label>
+                          <Textarea
+                            rows={4}
+                            value={editPost.content}
+                            onChange={e => setEditPost(p => p ? { ...p, content: e.target.value } : p)}
+                            data-testid="input-edit-post-content"
+                            className="rounded-xl bg-muted/30 border-border/30 resize-none"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs text-muted-foreground">صورة الخبر</Label>
+                          <div className="flex items-center gap-2">
+                            <Input
+                              value={editPost.imageUrl || ""}
+                              onChange={e => setEditPost(p => p ? { ...p, imageUrl: e.target.value } : p)}
+                              dir="ltr"
+                              placeholder="رابط الصورة"
+                              className="rounded-xl bg-muted/30 border-border/30 flex-1"
+                            />
+                            <input ref={postImageRef} type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && handlePostImageUpload(e.target.files[0])} />
+                            <Button variant="secondary" size="icon" className="rounded-xl" onClick={() => postImageRef.current?.click()} disabled={postImageUploading}>
+                              <ImagePlus className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between py-1">
+                          <div className="flex items-center gap-2">
+                            <Pin className="w-4 h-4 text-muted-foreground" />
+                            <span className="text-sm">تثبيت الخبر</span>
+                          </div>
+                          <Switch
+                            checked={editPost.isPinned}
+                            onCheckedChange={v => setEditPost(p => p ? { ...p, isPinned: v } : p)}
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <Button variant="secondary" className="flex-1 rounded-xl" onClick={() => setEditPost(null)}>
+                            <ChevronLeft className="w-4 h-4 ml-1" /> إلغاء
+                          </Button>
+                          <Button
+                            className="flex-1 rounded-xl"
+                            onClick={() => updatePostMutation.mutate({ id: editPost.id, data: editPost })}
+                            disabled={updatePostMutation.isPending}
+                            data-testid="button-save-edit-post"
+                          >
+                            <Save className="w-4 h-4 ml-1" /> حفظ
+                          </Button>
+                        </div>
+                      </div>
+                    </SectionCard>
+                  ) : (
+                    <SectionCard title="نشر خبر جديد" icon={Plus}>
+                      <div className="space-y-4">
+                        <div className="space-y-1.5">
+                          <Label className="text-xs text-muted-foreground">العنوان</Label>
+                          <Input
+                            value={newPost.title}
+                            onChange={e => setNewPost(p => ({ ...p, title: e.target.value }))}
+                            placeholder="عنوان الخبر..."
+                            data-testid="input-new-post-title"
+                            className="rounded-xl bg-muted/30 border-border/30"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs text-muted-foreground">المحتوى</Label>
+                          <Textarea
+                            rows={4}
+                            value={newPost.content}
+                            onChange={e => setNewPost(p => ({ ...p, content: e.target.value }))}
+                            placeholder="اكتب الخبر هنا..."
+                            data-testid="input-new-post-content"
+                            className="rounded-xl bg-muted/30 border-border/30 resize-none"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs text-muted-foreground">صورة الخبر (اختياري)</Label>
+                          <div className="flex items-center gap-2">
+                            <Input
+                              value={newPost.imageUrl}
+                              onChange={e => setNewPost(p => ({ ...p, imageUrl: e.target.value }))}
+                              placeholder="رابط أو ارفع صورة"
+                              dir="ltr"
+                              data-testid="input-new-post-image"
+                              className="rounded-xl bg-muted/30 border-border/30 flex-1"
+                            />
+                            <input ref={postImageRef} type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && handlePostImageUpload(e.target.files[0])} />
+                            <Button variant="secondary" size="icon" className="rounded-xl" onClick={() => postImageRef.current?.click()} disabled={postImageUploading}>
+                              <ImagePlus className="w-4 h-4" />
+                            </Button>
+                          </div>
+                          {newPost.imageUrl && (
+                            <div className="mt-2 rounded-xl overflow-hidden border border-border/30 aspect-video">
+                              <img src={newPost.imageUrl} alt="" className="w-full h-full object-cover" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center justify-between py-1">
+                          <div className="flex items-center gap-2">
+                            <Pin className="w-4 h-4 text-muted-foreground" />
+                            <span className="text-sm">تثبيت الخبر</span>
+                          </div>
+                          <Switch
+                            checked={newPost.isPinned}
+                            onCheckedChange={v => setNewPost(p => ({ ...p, isPinned: v }))}
+                            data-testid="switch-new-post-pinned"
+                          />
+                        </div>
+                        <Button
+                          className="w-full rounded-xl"
+                          onClick={() => addPostMutation.mutate(newPost)}
+                          disabled={!newPost.title || !newPost.content || addPostMutation.isPending}
+                          data-testid="button-publish-post"
+                        >
+                          <Newspaper className="w-4 h-4 ml-1.5" />
+                          {addPostMutation.isPending ? "جاري النشر..." : "نشر الخبر"}
+                        </Button>
+                      </div>
+                    </SectionCard>
+                  )}
+
+                  {posts.length > 0 && (
+                    <SectionCard title={`المنشورات (${posts.length})`} icon={Newspaper}>
+                      <div className="space-y-2">
+                        {posts.map(post => (
+                          <div
+                            key={post.id}
+                            data-testid={`post-item-${post.id}`}
+                            className="flex items-center gap-3 p-3 rounded-xl bg-muted/20 border border-border/20 transition-all"
+                          >
+                            {post.imageUrl && (
+                              <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
+                                <img src={post.imageUrl} alt="" className="w-full h-full object-cover" />
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                <p className="text-sm font-medium truncate">{post.title}</p>
+                                {post.isPinned && <Pin className="w-3 h-3 text-primary flex-shrink-0" />}
+                              </div>
+                              <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-1">{post.content}</p>
+                            </div>
+                            <button
+                              onClick={() => setEditPost(post)}
+                              data-testid={`button-edit-post-${post.id}`}
+                              className="text-xs text-primary hover:underline flex-shrink-0"
+                            >
+                              تعديل
+                            </button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => deletePostMutation.mutate(post.id)}
+                              data-testid={`button-delete-post-${post.id}`}
+                              className="text-destructive/40 hover:text-destructive flex-shrink-0"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    </SectionCard>
+                  )}
+                </>
+              )}
+
+              {/* Settings Tab */}
+              {activeTab === "settings" && (
+                <>
+                  <div className="mb-2">
+                    <h1 className="text-lg font-bold text-foreground">الإعدادات</h1>
+                    <p className="text-xs text-muted-foreground mt-0.5">إعدادات الأمان والحساب</p>
+                  </div>
+
+                  <SectionCard title="تغيير كلمة المرور" icon={Lock}>
+                    <div className="space-y-4">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs text-muted-foreground">كلمة المرور الحالية</Label>
+                        <Input
+                          type="password"
+                          value={pwdForm.currentPassword}
+                          onChange={e => setPwdForm(p => ({ ...p, currentPassword: e.target.value }))}
+                          data-testid="input-current-password"
+                          dir="ltr"
+                          className="rounded-xl bg-muted/30 border-border/30"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs text-muted-foreground">كلمة المرور الجديدة</Label>
+                        <Input
+                          type="password"
+                          value={pwdForm.newPassword}
+                          onChange={e => setPwdForm(p => ({ ...p, newPassword: e.target.value }))}
+                          data-testid="input-new-password"
+                          dir="ltr"
+                          className="rounded-xl bg-muted/30 border-border/30"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs text-muted-foreground">تأكيد كلمة المرور</Label>
+                        <Input
+                          type="password"
+                          value={pwdForm.confirmPassword}
+                          onChange={e => setPwdForm(p => ({ ...p, confirmPassword: e.target.value }))}
+                          data-testid="input-confirm-password"
+                          dir="ltr"
+                          className="rounded-xl bg-muted/30 border-border/30"
+                        />
+                      </div>
+                      <Button
+                        className="w-full rounded-xl"
+                        onClick={() => {
+                          if (pwdForm.newPassword !== pwdForm.confirmPassword) {
+                            toast({ title: "كلمات المرور غير متطابقة", variant: "destructive" });
+                            return;
+                          }
+                          changePwdMutation.mutate({ currentPassword: pwdForm.currentPassword, newPassword: pwdForm.newPassword });
+                        }}
+                        disabled={!pwdForm.currentPassword || !pwdForm.newPassword || changePwdMutation.isPending}
+                        data-testid="button-change-password"
+                      >
+                        {changePwdMutation.isPending ? "جاري التغيير..." : "تغيير كلمة المرور"}
+                      </Button>
+                    </div>
+                  </SectionCard>
+
+                  <SectionCard title="معلومات" icon={Settings}>
+                    <div className="space-y-3 text-sm text-muted-foreground">
+                      <div className="flex items-center justify-between">
+                        <span>كلمة المرور الافتراضية</span>
+                        <span className="font-mono text-xs bg-muted/50 px-2 py-1 rounded-lg" dir="ltr">admin123</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span>رابط لوحة التحكم</span>
+                        <span className="font-mono text-xs bg-muted/50 px-2 py-1 rounded-lg" dir="ltr">/admin</span>
+                      </div>
+                    </div>
+                  </SectionCard>
+                </>
+              )}
+            </div>
+
+        </div>
+      </main>
     </div>
   );
 }

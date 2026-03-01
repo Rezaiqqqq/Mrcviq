@@ -1,51 +1,40 @@
-# Personal Profile Website - موقع شخصي
+# Personal Profile Website
 
 ## Overview
-A stunning personal profile website with a full admin dashboard, built with React, Express, and PostgreSQL.
+Apple-inspired personal profile website with admin dashboard, built with React, Express, PostgreSQL.
 
 ## Features
-- **Public Profile Page** (`/`):
-  - Animated banner/hero image
-  - Profile picture with animated story ring (Instagram-style gradient)
-  - Name, username, bio, location, website
-  - Verified badge option
-  - Social media links with platform icons and colors
-  - News/Posts feed with pinned posts support
-  - RTL (Arabic) layout
-
-- **Admin Dashboard** (`/admin`, `/admin/dashboard`):
-  - Password-protected login (default: `admin123`)
-  - Profile management: name, bio, banner URL, avatar URL, location, website
-  - Toggle story ring and verified badge
-  - Social links management: add/delete with platform icons, colors
-  - Posts management: create, edit, delete, pin/unpin
-  - Password change
+- **Public Profile** (`/`): Banner, avatar with story ring animation, bio, social icons, news feed. No visible admin link.
+- **Admin Login** (`/admin`): Password-protected (default: `admin123`).
+- **Admin Dashboard** (`/admin/dashboard`): Sidebar navigation with 4 sections:
+  - Profile: Edit name, bio, avatar, banner (upload from device), story ring, verified badge
+  - Social: Add/delete social accounts with platform icon picker
+  - Posts: Create/edit/delete/pin news with image upload
+  - Settings: Change admin password
 
 ## Tech Stack
-- **Frontend**: React, TypeScript, TanStack Query, Wouter, Tailwind CSS, shadcn/ui, Framer Motion, react-icons
-- **Backend**: Express.js, TypeScript
-- **Database**: PostgreSQL (via Drizzle ORM)
-- **Styling**: RTL, dark/light theme, custom story ring animation
+- Frontend: React, TypeScript, TanStack Query, Wouter, Tailwind CSS, shadcn/ui, react-icons
+- Backend: Express.js, multer (file upload), TypeScript
+- Database: PostgreSQL (Drizzle ORM)
+- Design: Apple-inspired, RTL, CSS animations, glassmorphism
 
 ## Architecture
-- `shared/schema.ts` - Drizzle schema for profile, socialLinks, posts, adminCredentials
-- `server/storage.ts` - DbStorage class with all CRUD methods
-- `server/routes.ts` - All API endpoints
-- `server/index.ts` - App entry with seed data
+- `shared/schema.ts` - Database schema (profile, socialLinks, posts, adminCredentials)
+- `server/storage.ts` - DbStorage class (PostgreSQL)
+- `server/routes.ts` - API routes with auth middleware for uploads
 - `client/src/pages/Home.tsx` - Public profile page
-- `client/src/pages/Admin.tsx` - Admin login
-- `client/src/pages/Dashboard.tsx` - Admin dashboard with tabs
+- `client/src/pages/Admin.tsx` - Login page
+- `client/src/pages/Dashboard.tsx` - Full admin dashboard
 
-## API Endpoints
-- `GET/PATCH /api/profile` - Profile management
-- `GET/POST/PATCH/DELETE /api/social-links/:id` - Social links
-- `GET/POST/PATCH/DELETE /api/posts/:id` - Posts
-- `POST /api/admin/login` - Admin auth
-- `POST /api/admin/change-password` - Change password
+## API
+- `GET/PATCH /api/profile`
+- `GET/POST/PATCH/DELETE /api/social-links/:id`
+- `GET/POST/PATCH/DELETE /api/posts/:id`
+- `POST /api/upload` (requires x-admin-password header)
+- `POST /api/admin/login`
+- `POST /api/admin/change-password`
 
-## Default Admin Password
-`admin123` (change from Settings tab in dashboard)
-
-## Images
-- Banner: `/images/banner.png` (AI-generated purple/blue gradient)
-- Default avatar: `/images/avatar-default.png`
+## Security
+- Upload endpoint requires admin auth via x-admin-password header
+- MIME type + extension validation for uploads
+- File size limit: 10MB
