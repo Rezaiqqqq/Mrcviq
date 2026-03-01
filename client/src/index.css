@@ -8,6 +8,19 @@
   letter-spacing: 0.02em;
 }
 
+@keyframes story-zoom {
+  0% { transform: scale(1.1); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.animate-story-zoom {
+  animation: story-zoom 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.safe-area-top {
+  padding-top: env(safe-area-inset-top, 12px);
+}
+
 /* LIGHT MODE */
 :root {
   --button-outline: rgba(0,0,0, .10);

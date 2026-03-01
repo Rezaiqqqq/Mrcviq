@@ -1,5 +1,5 @@
-import { useEffect, useState, useRef } from "react";
-import { MapPin, Globe, BadgeCheck, Calendar, Sun, Moon, Music, Pause, Play, Users, Volume2, VolumeX } from "lucide-react";
+import { useEffect, useState, useRef, useCallback } from "react";
+import { MapPin, Globe, BadgeCheck, Calendar, Sun, Moon, Music, Pause, Play, Users, Volume2, VolumeX, X } from "lucide-react";
 import {
   SiInstagram, SiTiktok, SiTelegram, SiFacebook, SiDiscord
 } from "react-icons/si";
@@ -155,9 +155,114 @@ function MusicPlayer({ musicUrl, musicTitle }: { musicUrl: string; musicTitle: s
   );
 }
 
-function StoryAvatar({ src, name, hasStory }: { src: string; name: string; hasStory: boolean }) {
+function StoryViewer({ storyImage, storyAudio, onClose }: { storyImage: string; storyAudio: string; onClose: () => void }) {
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [progress, setProgress] = useState(0);
+  const [isMuted, setIsMuted] = useState(false);
+  const STORY_DURATION = 15000;
+  const startTimeRef = useRef(Date.now());
+
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    startTimeRef.current = Date.now();
+
+    const audio = audioRef.current;
+    if (audio) {
+      audio.currentTime = 0;
+      audio.play().catch(() => {});
+    }
+
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - startTimeRef.current;
+      const p = Math.min((elapsed / STORY_DURATION) * 100, 100);
+      setProgress(p);
+      if (p >= 100) {
+        clearInterval(interval);
+        onClose();
+      }
+    }, 50);
+
+    return () => {
+      clearInterval(interval);
+      document.body.style.overflow = "";
+      if (audio) {
+        audio.pause();
+        audio.currentTime = 0;
+      }
+    };
+  }, [onClose]);
+
+  const toggleMute = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const audio = audioRef.current;
+    if (audio) {
+      audio.muted = !audio.muted;
+      setIsMuted(!isMuted);
+    }
+  };
+
+  const handleClose = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onClose();
+  };
+
   return (
-    <div className="relative animate-fade-scale">
+    <div className="fixed inset-0 z-[100] bg-black flex items-center justify-center" onClick={handleClose}>
+      <audio ref={audioRef} src={storyAudio} preload="auto" />
+
+      <div className="absolute top-0 left-0 right-0 z-20 px-3 pt-3 safe-area-top">
+        <div className="h-[3px] bg-white/20 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-white rounded-full transition-none"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+
+        <div className="flex items-center justify-between mt-3 px-1">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-white/30">
+              <img src={PROFILE.avatarUrl} alt={PROFILE.name} className="w-full h-full object-cover" />
+            </div>
+            <span className="text-white text-sm font-medium">{PROFILE.name}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={toggleMute}
+              data-testid="button-story-mute"
+              className="w-9 h-9 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center active:scale-90 transition-transform"
+            >
+              {isMuted ? (
+                <VolumeX className="w-4 h-4 text-white" />
+              ) : (
+                <Volume2 className="w-4 h-4 text-white" />
+              )}
+            </button>
+            <button
+              onClick={handleClose}
+              data-testid="button-story-close"
+              className="w-9 h-9 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center active:scale-90 transition-transform"
+            >
+              <X className="w-4 h-4 text-white" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="w-full h-full max-w-lg mx-auto flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+        <img
+          src={storyImage}
+          alt="Story"
+          className="w-full h-full object-contain animate-story-zoom"
+          data-testid="story-image"
+        />
+      </div>
+    </div>
+  );
+}
+
+function StoryAvatar({ src, name, hasStory, onStoryClick }: { src: string; name: string; hasStory: boolean; onStoryClick?: () => void }) {
+  return (
+    <div className="relative animate-fade-scale cursor-pointer" onClick={hasStory ? onStoryClick : undefined}>
       {hasStory && (
         <div className="absolute -inset-[4px] rounded-full story-ring z-0" />
       )}
@@ -209,6 +314,8 @@ export default function Home() {
   const socialLinks = SOCIAL_LINKS;
 
   const [visitorCount, setVisitorCount] = useState(0);
+  const [showStory, setShowStory] = useState(false);
+  const closeStory = useCallback(() => setShowStory(false), []);
 
   useEffect(() => {
     const stored = parseInt(localStorage.getItem("visitor_count") || "0", 10);
@@ -225,6 +332,13 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background selection:bg-primary/20 transition-colors duration-500" dir="rtl">
+      {showStory && (
+        <StoryViewer
+          storyImage="/images/story.jpg"
+          storyAudio="/images/story-audio.m4a"
+          onClose={closeStory}
+        />
+      )}
       <FloatingOrbs />
 
       <button
@@ -256,6 +370,7 @@ export default function Home() {
             src={profile.avatarUrl}
             name={profile.name}
             hasStory={profile.hasStory}
+            onStoryClick={() => setShowStory(true)}
           />
 
           <div className="mt-5 space-y-1 animate-fade-up" style={{ animationDelay: "100ms" }}>
