@@ -416,7 +416,10 @@ export default function Home() {
                 {profile.name}
               </h1>
               {profile.isVerified && (
-                <BadgeCheck className="w-5 h-5 text-[#3897f0] fill-[#3897f0]" />
+                <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 40 40" fill="none">
+                  <circle cx="20" cy="20" r="20" fill="#3897f0" />
+                  <path d="M17.5 27L11 20.5L13.5 18L17.5 22L27 12.5L29.5 15L17.5 27Z" fill="white" />
+                </svg>
               )}
             </div>
           </div>
