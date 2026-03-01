@@ -411,12 +411,12 @@ export default function Home() {
           />
 
           <div className="mt-5 space-y-1 animate-fade-up" style={{ animationDelay: "100ms" }}>
-            <div className="flex items-center justify-center gap-1.5">
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground" data-testid="profile-name">
+            <div className="flex items-center justify-center gap-1">
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground" style={{ fontFamily: "'Poppins', sans-serif" }} data-testid="profile-name">
                 {profile.name}
               </h1>
               {profile.isVerified && (
-                <BadgeCheck className="w-4 h-4 text-primary fill-primary/20 -mt-0.5" />
+                <BadgeCheck className="w-5 h-5 text-[#3897f0] fill-[#3897f0]" />
               )}
             </div>
           </div>
