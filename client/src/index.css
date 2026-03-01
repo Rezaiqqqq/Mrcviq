@@ -124,31 +124,31 @@ body {
   --sidebar: 0 0% 11%;
   --sidebar-foreground: 0 0% 98%;
   --sidebar-border: 0 0% 14%;
-  --sidebar-primary: 174 50% 42%;
+  --sidebar-primary: 0 45% 55%;
   --sidebar-primary-foreground: 0 0% 98%;
-  --sidebar-accent: 170 10% 15%;
+  --sidebar-accent: 0 10% 15%;
   --sidebar-accent-foreground: 0 0% 98%;
-  --sidebar-ring: 174 50% 42%;
+  --sidebar-ring: 0 45% 55%;
   --popover: 0 0% 13%;
   --popover-foreground: 0 0% 98%;
   --popover-border: 0 0% 16%;
-  --primary: 174 50% 42%;
+  --primary: 0 45% 55%;
   --primary-foreground: 0 0% 98%;
-  --secondary: 170 8% 17%;
+  --secondary: 0 8% 17%;
   --secondary-foreground: 0 0% 98%;
-  --muted: 170 6% 16%;
+  --muted: 0 6% 16%;
   --muted-foreground: 0 0% 65%;
-  --accent: 174 12% 18%;
+  --accent: 0 12% 18%;
   --accent-foreground: 0 0% 98%;
   --destructive: 0 84% 45%;
   --destructive-foreground: 0 0% 98%;
   --input: 0 0% 30%;
-  --ring: 174 50% 42%;
-  --chart-1: 174 50% 55%;
-  --chart-2: 180 40% 55%;
-  --chart-3: 160 50% 50%;
-  --chart-4: 190 45% 60%;
-  --chart-5: 170 55% 45%;
+  --ring: 0 45% 55%;
+  --chart-1: 0 45% 55%;
+  --chart-2: 10 40% 50%;
+  --chart-3: 350 35% 50%;
+  --chart-4: 20 45% 55%;
+  --chart-5: 5 50% 45%;
   --shadow-2xs: 0px 2px 0px 0px hsl(0 0% 0% / 0.00);
   --shadow-xs: 0px 2px 0px 0px hsl(0 0% 0% / 0.00);
   --shadow-sm: 0px 2px 0px 0px hsl(0 0% 0% / 0.00), 0px 1px 2px -1px hsl(0 0% 0% / 0.00);
@@ -226,6 +226,10 @@ body {
 
 .story-ring {
   background: linear-gradient(135deg, #2d9a8f, #1a7a6d, #3db8a9, #1a6b5a, #2d9a8f);
+}
+
+.dark .story-ring {
+  background: linear-gradient(135deg, #c0392b, #a93226, #d35400, #c0392b, #e74c3c);
   background-size: 300% 300%;
   animation: story-spin 3s ease infinite;
 }
@@ -301,6 +305,12 @@ body {
 .dark .floating-orb {
   opacity: 0.08;
 }
+
+.dark .orb-1 { background: hsl(0, 45%, 50%); }
+.dark .orb-2 { background: hsl(10, 40%, 45%); }
+.dark .orb-3 { background: hsl(350, 35%, 48%); }
+.dark .orb-4 { background: hsl(15, 45%, 50%); }
+.dark .orb-5 { background: hsl(5, 50%, 42%); }
 
 .orb-1 {
   width: 300px;

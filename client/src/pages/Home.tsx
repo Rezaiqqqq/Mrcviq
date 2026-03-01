@@ -11,7 +11,9 @@ const PROFILE = {
   name: "Mohammed Reza",
   bio: "اللَّهُمَّ عَجِّل لِوَلِيِّكَ الْفَرَج",
   bannerUrl: "/images/banner.jpg",
+  bannerDarkUrl: "/images/banner-dark.png",
   avatarUrl: "/images/avatar.jpg",
+  avatarDarkUrl: "/images/avatar-dark.webp",
   hasStory: true,
   location: "العراق، كربلاء",
   isVerified: true,
@@ -393,7 +395,7 @@ export default function Home() {
 
       <div className="relative w-full h-48 sm:h-64 md:h-80 overflow-hidden">
         <img
-          src={profile.bannerUrl}
+          src={theme === "dark" ? profile.bannerDarkUrl : profile.bannerUrl}
           alt="banner"
           className="w-full h-full object-cover animate-banner-reveal"
           data-testid="profile-banner"
@@ -404,7 +406,7 @@ export default function Home() {
       <div className="relative z-10 max-w-lg mx-auto px-5 pb-20">
         <div className="-mt-16 sm:-mt-20 mb-6 flex flex-col items-center text-center">
           <StoryAvatar
-            src={profile.avatarUrl}
+            src={theme === "dark" ? profile.avatarDarkUrl : profile.avatarUrl}
             name={profile.name}
             hasStory={profile.hasStory}
             onStoryClick={() => setShowStory(true)}
