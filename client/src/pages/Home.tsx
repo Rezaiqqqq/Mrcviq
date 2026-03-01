@@ -411,16 +411,10 @@ export default function Home() {
           />
 
           <div className="mt-5 space-y-1 animate-fade-up" style={{ animationDelay: "100ms" }}>
-            <div className="flex items-center justify-center gap-1">
-              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground" style={{ fontFamily: "'Poppins', sans-serif" }} data-testid="profile-name">
+            <div className="flex items-center justify-center">
+              <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground text-center" style={{ fontFamily: "'Poppins', sans-serif" }} data-testid="profile-name">
                 {profile.name}
               </h1>
-              {profile.isVerified && (
-                <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 40 40" fill="none">
-                  <circle cx="20" cy="20" r="20" fill="#3897f0" />
-                  <path d="M17.5 27L11 20.5L13.5 18L17.5 22L27 12.5L29.5 15L17.5 27Z" fill="white" />
-                </svg>
-              )}
             </div>
           </div>
 
