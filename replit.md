@@ -1,43 +1,29 @@
-# Personal Profile Website
+# Personal Profile Website - Mohammed Reza
 
 ## Overview
-Apple-inspired personal profile website with admin dashboard, built with React, Express, PostgreSQL.
+Apple-inspired personal profile website with static data (no database needed for public page).
 
 ## Features
-- **Public Profile** (`/`): Banner, avatar with story ring animation, bio, social icons, news feed
-- **Copyright footer**: "Designed by Mohammed Reza" - clicking it opens admin panel
-- **Dark/Light Mode**: Toggle button with localStorage persistence, system preference detection
-- **Animated Background**: Floating orbs with blur effects, different colors
-- **Music Player**: Audio player with play/pause, progress bar, music visualizer bars
-- **Visitor Counter**: Tracks unique visitors per session, displays count
-- **Admin Login** (`/admin`): Password-protected (default: `admin123`)
-- **Admin Dashboard** (`/admin/dashboard`): Sidebar navigation with 4 sections:
-  - Profile: Edit name, bio, avatar, banner, story ring, verified badge, music
-  - Social: Add/delete social accounts with platform icon picker
-  - Posts: Create/edit/delete/pin news with image upload
-  - Settings: Change admin password
+- **Public Profile** (`/`): Banner, avatar with story ring, bio, social icons
+- **Static Data**: All profile info hardcoded - works on any hosting
+- **Dark/Light Mode**: Toggle with localStorage persistence
+- **Animated Background**: Floating orbs with blur effects
+- **Music Player**: Audio player with play/pause/mute
+- **Visitor Counter**: Client-side localStorage counter
+- **Copyright Footer**: "Designed by Mohammed Reza" links to /admin
 
 ## Tech Stack
-- Frontend: React, TypeScript, TanStack Query, Wouter, Tailwind CSS, shadcn/ui, react-icons
-- Backend: Express.js, multer (file upload for images + audio), TypeScript
-- Database: PostgreSQL (Drizzle ORM)
-- Design: Apple iOS-inspired, RTL, CSS animations, glassmorphism, dark mode
+- Frontend: React, TypeScript, Tailwind CSS, shadcn/ui, react-icons
+- Backend: Express.js (for serving + admin API)
+- Database: PostgreSQL (only for admin panel)
 
 ## Architecture
-- `shared/schema.ts` - Database schema (profile, socialLinks, posts, adminCredentials, siteVisitors)
-- `server/storage.ts` - DbStorage class (PostgreSQL)
-- `server/routes.ts` - API routes with auth middleware
-- `client/src/pages/Home.tsx` - Public profile page
+- `client/src/pages/Home.tsx` - Public profile (static data, no API calls)
 - `client/src/pages/Admin.tsx` - Login page
-- `client/src/pages/Dashboard.tsx` - Full admin dashboard
-- `client/src/components/ThemeProvider.tsx` - Dark/light mode context
+- `client/src/pages/Dashboard.tsx` - Admin dashboard
+- `client/src/components/ThemeProvider.tsx` - Dark/light mode
 
-## API
-- `GET/PATCH /api/profile` (includes musicUrl, musicTitle)
-- `GET/POST/PATCH/DELETE /api/social-links/:id`
-- `GET/POST/PATCH/DELETE /api/posts/:id`
-- `POST /api/upload` (requires x-admin-password header, supports images + audio)
-- `POST /api/admin/login`
-- `POST /api/admin/change-password`
-- `GET /api/visitors` - get visitor count
-- `POST /api/visitors/increment` - increment visitor count
+## Profile Data
+- Name: Mohammed Reza
+- Location: العراق، كربلاء
+- Social: Instagram, TikTok, Telegram, Facebook, Discord, Store, Channel

@@ -1,24 +1,43 @@
 import { useEffect, useState, useRef } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { type Profile, type SocialLink, type Post } from "@shared/schema";
-import { Skeleton } from "@/components/ui/skeleton";
 import { MapPin, Globe, BadgeCheck, Calendar, Sun, Moon, Music, Pause, Play, Users, Volume2, VolumeX } from "lucide-react";
 import {
-  SiInstagram, SiX, SiTiktok, SiYoutube, SiSnapchat,
-  SiLinkedin, SiGithub, SiDiscord, SiTelegram, SiFacebook,
-  SiWhatsapp, SiThreads, SiTwitch, SiPinterest
+  SiInstagram, SiTiktok, SiTelegram, SiFacebook, SiDiscord
 } from "react-icons/si";
-import { format } from "date-fns";
-import { ar } from "date-fns/locale";
 import { useTheme } from "@/components/ThemeProvider";
-import { apiRequest } from "@/lib/queryClient";
+import { HiShoppingBag } from "react-icons/hi2";
+import { HiSpeakerphone } from "react-icons/hi";
+
+const PROFILE = {
+  name: "Mohammed Reza",
+  username: "@rezaiq",
+  bio: "مطور ومصمم من العراق، أهتم بالتقنية والإبداع الرقمي",
+  bannerUrl: "/images/banner.png",
+  avatarUrl: "/images/avatar-default.png",
+  hasStory: true,
+  location: "العراق، كربلاء",
+  isVerified: true,
+  musicUrl: "",
+  musicTitle: "",
+};
+
+const SOCIAL_LINKS = [
+  { id: 1, platform: "instagram", url: "https://www.instagram.com/tvt_2?igsh=MWNvdTlxdnBvMHdieg==", displayName: "@tvt_2", icon: "instagram", color: "#E1306C" },
+  { id: 2, platform: "tiktok", url: "https://tiktok.com/@rezaiq.313", displayName: "rezaiq.313", icon: "tiktok", color: "#010101" },
+  { id: 3, platform: "telegram", url: "https://t.me/Rezaiqq", displayName: "Rezaiqq", icon: "telegram", color: "#2CA5E0" },
+  { id: 4, platform: "facebook", url: "https://www.facebook.com/share/1DjvaVj8Br/", displayName: "Mohammed", icon: "facebook", color: "#1877F2" },
+  { id: 5, platform: "discord", url: "#", displayName: "m7mdredayt", icon: "discord", color: "#5865F2" },
+  { id: 6, platform: "store", url: "https://t.me/ReStoiq", displayName: "متجري", icon: "store", color: "#FF6B35" },
+  { id: 7, platform: "channel", url: "https://t.me/reza_iiq", displayName: "قناتي", icon: "channel", color: "#8B5CF6" },
+];
 
 const PLATFORM_ICONS: Record<string, React.ElementType> = {
-  instagram: SiInstagram, x: SiX, twitter: SiX, tiktok: SiTiktok,
-  youtube: SiYoutube, snapchat: SiSnapchat, linkedin: SiLinkedin,
-  github: SiGithub, discord: SiDiscord, telegram: SiTelegram,
-  facebook: SiFacebook, whatsapp: SiWhatsapp, threads: SiThreads,
-  twitch: SiTwitch, pinterest: SiPinterest,
+  instagram: SiInstagram,
+  tiktok: SiTiktok,
+  telegram: SiTelegram,
+  facebook: SiFacebook,
+  discord: SiDiscord,
+  store: HiShoppingBag,
+  channel: HiSpeakerphone,
 };
 
 function FloatingOrbs() {
@@ -150,8 +169,8 @@ function StoryAvatar({ src, name, hasStory }: { src: string; name: string; hasSt
   );
 }
 
-function SocialIcon({ link, index }: { link: SocialLink; index: number }) {
-  const Icon = PLATFORM_ICONS[link.platform.toLowerCase()] || Globe;
+function SocialIcon({ link, index }: { link: typeof SOCIAL_LINKS[0]; index: number }) {
+  const Icon = PLATFORM_ICONS[link.platform] || Globe;
   const iconColor = (link.color === "#000000" || link.color === "#010101") ? "currentColor" : link.color;
 
   return (
@@ -179,43 +198,6 @@ function SocialIcon({ link, index }: { link: SocialLink; index: number }) {
   );
 }
 
-function NewsCard({ post, index }: { post: Post; index: number }) {
-  return (
-    <div
-      data-testid={`post-card-${post.id}`}
-      className="group relative animate-fade-up"
-      style={{ animationDelay: `${60 * index}ms` }}
-    >
-      <div className="relative rounded-2xl overflow-hidden bg-card/50 dark:bg-card/30 backdrop-blur-sm border border-border/50 transition-all duration-300 group-hover:border-border group-hover:bg-card/80 dark:group-hover:bg-card/50">
-        {post.imageUrl && (
-          <div className="aspect-[2/1] w-full overflow-hidden">
-            <img
-              src={post.imageUrl}
-              alt={post.title}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
-            />
-          </div>
-        )}
-        <div className="p-5 space-y-3">
-          <div className="flex items-start justify-between gap-3">
-            <h3 className="font-semibold text-[15px] text-foreground leading-snug">{post.title}</h3>
-            {post.isPinned && (
-              <span className="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-primary/10 text-primary">
-                مثبت
-              </span>
-            )}
-          </div>
-          <p className="text-[13px] text-muted-foreground leading-relaxed">{post.content}</p>
-          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/70 pt-1">
-            <Calendar className="w-3 h-3" />
-            <span>{format(new Date(post.createdAt), "d MMMM yyyy", { locale: ar })}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function VisitorCounter({ count }: { count: number }) {
   return (
     <div className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground/60 animate-fade-up" style={{ animationDelay: "400ms" }}>
@@ -227,22 +209,23 @@ function VisitorCounter({ count }: { count: number }) {
 
 export default function Home() {
   const { theme, toggleTheme } = useTheme();
-  const { data: profile, isLoading } = useQuery<Profile>({ queryKey: ["/api/profile"] });
-  const { data: socialLinks = [] } = useQuery<SocialLink[]>({ queryKey: ["/api/social-links"] });
-  const { data: posts = [] } = useQuery<Post[]>({ queryKey: ["/api/posts"] });
-  const { data: visitorsData } = useQuery<{ count: number }>({ queryKey: ["/api/visitors"] });
+  const profile = PROFILE;
+  const socialLinks = SOCIAL_LINKS;
+
+  const [visitorCount, setVisitorCount] = useState(0);
 
   useEffect(() => {
+    const stored = parseInt(localStorage.getItem("visitor_count") || "0", 10);
     const visited = sessionStorage.getItem("visited");
     if (!visited) {
-      apiRequest("POST", "/api/visitors/increment").catch(() => {});
+      const newCount = stored + 1;
+      localStorage.setItem("visitor_count", String(newCount));
       sessionStorage.setItem("visited", "1");
+      setVisitorCount(newCount);
+    } else {
+      setVisitorCount(stored);
     }
   }, []);
-
-  const pinnedPosts = posts.filter(p => p.isPinned);
-  const regularPosts = posts.filter(p => !p.isPinned);
-  const sortedPosts = [...pinnedPosts, ...regularPosts];
 
   return (
     <div className="min-h-screen bg-background selection:bg-primary/20 transition-colors duration-500" dir="rtl">
@@ -262,55 +245,38 @@ export default function Home() {
       </button>
 
       <div className="relative w-full h-48 sm:h-64 md:h-80 overflow-hidden">
-        {isLoading ? (
-          <Skeleton className="w-full h-full rounded-none" />
-        ) : (
-          <>
-            <img
-              src={profile?.bannerUrl || "/images/banner.png"}
-              alt="banner"
-              className="w-full h-full object-cover"
-              data-testid="profile-banner"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
-          </>
-        )}
+        <img
+          src={profile.bannerUrl}
+          alt="banner"
+          className="w-full h-full object-cover"
+          data-testid="profile-banner"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
       </div>
 
       <div className="relative z-10 max-w-lg mx-auto px-5 pb-20">
         <div className="-mt-16 sm:-mt-20 mb-6 flex flex-col items-center text-center">
-          {isLoading ? (
-            <Skeleton className="w-32 h-32 rounded-full" />
-          ) : (
-            <StoryAvatar
-              src={profile?.avatarUrl || "/images/avatar-default.png"}
-              name={profile?.name || ""}
-              hasStory={profile?.hasStory || false}
-            />
-          )}
+          <StoryAvatar
+            src={profile.avatarUrl}
+            name={profile.name}
+            hasStory={profile.hasStory}
+          />
 
-          {isLoading ? (
-            <div className="mt-5 space-y-2 flex flex-col items-center">
-              <Skeleton className="h-7 w-40" />
-              <Skeleton className="h-4 w-28" />
+          <div className="mt-5 space-y-1 animate-fade-up" style={{ animationDelay: "100ms" }}>
+            <div className="flex items-center justify-center gap-1.5">
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground" data-testid="profile-name">
+                {profile.name}
+              </h1>
+              {profile.isVerified && (
+                <BadgeCheck className="w-5 h-5 text-primary fill-primary/20" />
+              )}
             </div>
-          ) : (
-            <div className="mt-5 space-y-1 animate-fade-up" style={{ animationDelay: "100ms" }}>
-              <div className="flex items-center justify-center gap-1.5">
-                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground" data-testid="profile-name">
-                  {profile?.name}
-                </h1>
-                {profile?.isVerified && (
-                  <BadgeCheck className="w-5 h-5 text-primary fill-primary/20" />
-                )}
-              </div>
-              <p className="text-sm text-muted-foreground font-medium" data-testid="profile-username">
-                {profile?.username}
-              </p>
-            </div>
-          )}
+            <p className="text-sm text-muted-foreground font-medium" data-testid="profile-username">
+              {profile.username}
+            </p>
+          </div>
 
-          {!isLoading && profile?.bio && (
+          {profile.bio && (
             <p
               className="mt-4 text-[13px] sm:text-sm text-muted-foreground leading-relaxed max-w-sm animate-fade-up"
               style={{ animationDelay: "150ms" }}
@@ -320,27 +286,19 @@ export default function Home() {
             </p>
           )}
 
-          {!isLoading && (profile?.location || profile?.website) && (
+          {profile.location && (
             <div className="mt-3 flex items-center justify-center gap-4 text-xs text-muted-foreground animate-fade-up" style={{ animationDelay: "200ms" }}>
-              {profile?.location && (
-                <span className="flex items-center gap-1">
-                  <MapPin className="w-3 h-3" />
-                  {profile.location}
-                </span>
-              )}
-              {profile?.website && (
-                <a href={profile.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-primary/80 hover:text-primary transition-colors">
-                  <Globe className="w-3 h-3" />
-                  {profile.website.replace(/^https?:\/\//, "")}
-                </a>
-              )}
+              <span className="flex items-center gap-1">
+                <MapPin className="w-3 h-3" />
+                {profile.location}
+              </span>
             </div>
           )}
         </div>
 
-        {!isLoading && profile?.musicUrl && (
+        {profile.musicUrl && (
           <div className="mb-8">
-            <MusicPlayer musicUrl={profile.musicUrl} musicTitle={profile.musicTitle || ""} />
+            <MusicPlayer musicUrl={profile.musicUrl} musicTitle={profile.musicTitle} />
           </div>
         )}
 
@@ -354,29 +312,8 @@ export default function Home() {
           </div>
         )}
 
-        {sortedPosts.length > 0 && socialLinks.length > 0 && (
-          <div className="h-px bg-gradient-to-l from-transparent via-border to-transparent mb-8 animate-fade-up" style={{ animationDelay: "300ms" }} />
-        )}
-
-        {sortedPosts.length > 0 && (
-          <div className="space-y-4">
-            <h2 className="text-xs font-semibold text-muted-foreground/60 uppercase tracking-[0.15em] text-center mb-6 animate-fade-up">
-              آخر الأخبار
-            </h2>
-            {sortedPosts.map((post, i) => (
-              <NewsCard key={post.id} post={post} index={i} />
-            ))}
-          </div>
-        )}
-
-        {sortedPosts.length === 0 && !isLoading && (
-          <div className="text-center py-16 text-muted-foreground/50">
-            <p className="text-xs">لا توجد أخبار</p>
-          </div>
-        )}
-
         <div className="mt-16 mb-4">
-          {visitorsData && <VisitorCounter count={visitorsData.count} />}
+          <VisitorCounter count={visitorCount} />
         </div>
 
         <div className="text-center">
