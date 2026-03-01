@@ -2,7 +2,7 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { eq } from "drizzle-orm";
 import pg from "pg";
 import {
-  profile, socialLinks, posts, adminCredentials,
+  profile, socialLinks, posts, adminCredentials, siteVisitors,
   type Profile, type InsertProfile,
   type SocialLink, type InsertSocialLink,
   type Post, type InsertPost,
@@ -28,6 +28,9 @@ export interface IStorage {
 
   verifyAdmin(password: string): Promise<boolean>;
   updateAdminPassword(password: string): Promise<void>;
+
+  getVisitorCount(): Promise<number>;
+  incrementVisitorCount(): Promise<number>;
 }
 
 export class DbStorage implements IStorage {
@@ -100,6 +103,21 @@ export class DbStorage implements IStorage {
     } else {
       await db.update(adminCredentials).set({ password }).where(eq(adminCredentials.id, rows[0].id));
     }
+  }
+
+  async getVisitorCount(): Promise<number> {
+    const rows = await db.select().from(siteVisitors).limit(1);
+    return rows[0]?.count || 0;
+  }
+
+  async incrementVisitorCount(): Promise<number> {
+    const rows = await db.select().from(siteVisitors).limit(1);
+    if (!rows[0]) {
+      const inserted = await db.insert(siteVisitors).values({ count: 1 }).returning();
+      return inserted[0].count;
+    }
+    const updated = await db.update(siteVisitors).set({ count: rows[0].count + 1 }).where(eq(siteVisitors.id, rows[0].id)).returning();
+    return updated[0].count;
   }
 }
 

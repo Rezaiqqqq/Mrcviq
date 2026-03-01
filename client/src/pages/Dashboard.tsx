@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   User, Link2, Newspaper, Settings, LogOut, Plus, Trash2,
   Pin, Upload, ExternalLink, BadgeCheck, Eye, Palette, Lock,
-  Camera, ImagePlus, Save, ChevronLeft
+  Camera, ImagePlus, Save, ChevronLeft, Music
 } from "lucide-react";
 import {
   SiInstagram, SiX, SiTiktok, SiYoutube, SiSnapchat,
@@ -175,6 +175,8 @@ export default function Dashboard() {
   const postImageRef = useRef<HTMLInputElement>(null);
   const [postImageUploading, setPostImageUploading] = useState(false);
   const [editPost, setEditPost] = useState<Post | null>(null);
+  const musicFileRef = useRef<HTMLInputElement>(null);
+  const [musicUploading, setMusicUploading] = useState(false);
 
   const addPostMutation = useMutation({
     mutationFn: (data: typeof newPost) => apiRequest("POST", "/api/posts", data),
@@ -231,6 +233,26 @@ export default function Dashboard() {
       }
     } catch {} finally {
       setPostImageUploading(false);
+    }
+  };
+
+  const handleMusicUpload = async (file: File) => {
+    setMusicUploading(true);
+    try {
+      const pwd = sessionStorage.getItem("admin_auth") || "";
+      const formData = new FormData();
+      formData.append("image", file);
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+        headers: { "x-admin-password": pwd },
+      });
+      const data = await res.json();
+      if (data.url) {
+        setProfileForm(p => ({ ...p, musicUrl: data.url }));
+      }
+    } catch {} finally {
+      setMusicUploading(false);
     }
   };
 
@@ -452,6 +474,55 @@ export default function Dashboard() {
                           data-testid="switch-is-verified"
                         />
                       </div>
+                    </div>
+                  </SectionCard>
+
+                  <SectionCard title="الموسيقى" icon={Music}>
+                    <div className="space-y-4">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs text-muted-foreground">عنوان المقطع</Label>
+                        <Input
+                          value={profileForm.musicTitle || ""}
+                          onChange={e => setProfileForm(p => ({ ...p, musicTitle: e.target.value }))}
+                          placeholder="اسم الأغنية..."
+                          data-testid="input-music-title"
+                          className="rounded-xl bg-muted/30 border-border/30"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs text-muted-foreground">رابط الملف الصوتي</Label>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            value={profileForm.musicUrl || ""}
+                            onChange={e => setProfileForm(p => ({ ...p, musicUrl: e.target.value }))}
+                            placeholder="https://... أو ارفع ملف"
+                            dir="ltr"
+                            data-testid="input-music-url"
+                            className="rounded-xl bg-muted/30 border-border/30 flex-1"
+                          />
+                          <input
+                            ref={musicFileRef}
+                            type="file"
+                            accept="audio/*"
+                            className="hidden"
+                            onChange={e => e.target.files?.[0] && handleMusicUpload(e.target.files[0])}
+                          />
+                          <Button
+                            variant="secondary"
+                            size="icon"
+                            className="rounded-xl"
+                            onClick={() => musicFileRef.current?.click()}
+                            disabled={musicUploading}
+                            data-testid="button-upload-music"
+                          >
+                            <Upload className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        {musicUploading && (
+                          <p className="text-xs text-muted-foreground">جاري رفع الملف...</p>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-muted-foreground/60">يدعم: MP3, WAV, OGG, AAC</p>
                     </div>
                   </SectionCard>
 

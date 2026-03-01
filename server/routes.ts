@@ -20,18 +20,21 @@ const multerStorage = multer.diskStorage({
   },
 });
 
-const ALLOWED_MIMES = ["image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml"];
+const ALLOWED_MIMES = [
+  "image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml",
+  "audio/mpeg", "audio/mp3", "audio/wav", "audio/ogg", "audio/aac", "audio/m4a",
+];
 
 const upload = multer({
   storage: multerStorage,
-  limits: { fileSize: 10 * 1024 * 1024 },
+  limits: { fileSize: 20 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
-    const extOk = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(path.extname(file.originalname));
+    const extOk = /\.(jpg|jpeg|png|gif|webp|svg|mp3|wav|ogg|aac|m4a)$/i.test(path.extname(file.originalname));
     const mimeOk = ALLOWED_MIMES.includes(file.mimetype);
     if (extOk && mimeOk) {
       cb(null, true);
     } else {
-      cb(new Error("Only image files are allowed"));
+      cb(new Error("File type not allowed"));
     }
   },
 });
@@ -148,6 +151,16 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     } catch (e: any) {
       res.status(400).json({ error: e.message });
     }
+  });
+
+  app.get("/api/visitors", async (_req, res) => {
+    const count = await storage.getVisitorCount();
+    res.json({ count });
+  });
+
+  app.post("/api/visitors/increment", async (_req, res) => {
+    const count = await storage.incrementVisitorCount();
+    res.json({ count });
   });
 
   return httpServer;

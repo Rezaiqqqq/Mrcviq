@@ -19,6 +19,8 @@ export const profile = pgTable("profile", {
   location: text("location").notNull().default(""),
   website: text("website").notNull().default(""),
   isVerified: boolean("is_verified").notNull().default(false),
+  musicUrl: text("music_url").notNull().default(""),
+  musicTitle: text("music_title").notNull().default(""),
 });
 
 export const socialLinks = pgTable("social_links", {
@@ -43,6 +45,11 @@ export const posts = pgTable("posts", {
 export const adminCredentials = pgTable("admin_credentials", {
   id: serial("id").primaryKey(),
   password: text("password").notNull().default("admin123"),
+});
+
+export const siteVisitors = pgTable("site_visitors", {
+  id: serial("id").primaryKey(),
+  count: integer("count").notNull().default(0),
 });
 
 export const insertProfileSchema = createInsertSchema(profile).omit({ id: true });
