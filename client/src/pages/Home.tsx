@@ -313,11 +313,60 @@ function VisitorCounter({ count }: { count: number }) {
   );
 }
 
+function LoadingScreen({ onFinish }: { onFinish: () => void }) {
+  const [progress, setProgress] = useState(0);
+  const { theme } = useTheme();
+
+  useEffect(() => {
+    const allImages = [
+      PROFILE.bannerUrl, PROFILE.bannerDarkUrl,
+      PROFILE.avatarUrl, PROFILE.avatarDarkUrl,
+      "/images/story.jpg"
+    ];
+
+    let loaded = 0;
+    const total = allImages.length;
+
+    allImages.forEach((src) => {
+      const img = new Image();
+      img.onload = img.onerror = () => {
+        loaded++;
+        setProgress(Math.round((loaded / total) * 100));
+        if (loaded >= total) {
+          setTimeout(onFinish, 400);
+        }
+      };
+      img.src = src;
+    });
+  }, [onFinish]);
+
+  return (
+    <div className="fixed inset-0 z-[200] bg-background flex flex-col items-center justify-center gap-6 animate-loader-screen">
+      <div className="relative w-20 h-20 rounded-full overflow-hidden ring-2 ring-primary/30 animate-pulse">
+        <img
+          src={theme === "dark" ? PROFILE.avatarDarkUrl : PROFILE.avatarUrl}
+          alt="loading"
+          className="w-full h-full object-cover"
+        />
+      </div>
+      <div className="w-48 h-1 bg-muted rounded-full overflow-hidden">
+        <div
+          className="h-full bg-primary rounded-full transition-all duration-300 ease-out"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+      <p className="text-xs text-muted-foreground font-arabic">{progress}%</p>
+    </div>
+  );
+}
+
 export default function Home() {
   const { theme, toggleTheme } = useTheme();
   const profile = PROFILE;
   const socialLinks = SOCIAL_LINKS;
 
+  const [isLoading, setIsLoading] = useState(true);
+  const finishLoading = useCallback(() => setIsLoading(false), []);
   const [visitorCount, setVisitorCount] = useState(0);
   const [showStory, setShowStory] = useState(false);
   const closeStory = useCallback(() => setShowStory(false), []);
@@ -369,8 +418,12 @@ export default function Home() {
     };
   }, []);
 
+  if (isLoading) {
+    return <LoadingScreen onFinish={finishLoading} />;
+  }
+
   return (
-    <div className="min-h-screen bg-background selection:bg-primary/20 transition-colors duration-500" dir="rtl">
+    <div className="min-h-screen bg-background selection:bg-primary/20 transition-colors duration-500 animate-page-enter" dir="rtl">
       {showStory && (
         <StoryViewer
           storyImage="/images/story.jpg"
