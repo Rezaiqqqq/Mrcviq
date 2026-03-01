@@ -159,12 +159,9 @@ function StoryViewer({ storyImage, storyAudio, onClose }: { storyImage: string; 
   const audioRef = useRef<HTMLAudioElement>(null);
   const [progress, setProgress] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
-  const STORY_DURATION = 15000;
-  const startTimeRef = useRef(Date.now());
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
-    startTimeRef.current = Date.now();
 
     const audio = audioRef.current;
     if (audio) {
@@ -172,20 +169,26 @@ function StoryViewer({ storyImage, storyAudio, onClose }: { storyImage: string; 
       audio.play().catch(() => {});
     }
 
-    const interval = setInterval(() => {
-      const elapsed = Date.now() - startTimeRef.current;
-      const p = Math.min((elapsed / STORY_DURATION) * 100, 100);
-      setProgress(p);
-      if (p >= 100) {
-        clearInterval(interval);
-        onClose();
+    const onTimeUpdate = () => {
+      if (audio && audio.duration) {
+        setProgress((audio.currentTime / audio.duration) * 100);
       }
-    }, 50);
+    };
+
+    const onEnded = () => {
+      onClose();
+    };
+
+    if (audio) {
+      audio.addEventListener("timeupdate", onTimeUpdate);
+      audio.addEventListener("ended", onEnded);
+    }
 
     return () => {
-      clearInterval(interval);
       document.body.style.overflow = "";
       if (audio) {
+        audio.removeEventListener("timeupdate", onTimeUpdate);
+        audio.removeEventListener("ended", onEnded);
         audio.pause();
         audio.currentTime = 0;
       }
