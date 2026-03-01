@@ -210,52 +210,52 @@ function StoryViewer({ storyImage, storyAudio, onClose }: { storyImage: string; 
   };
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black" dir="ltr">
+    <div className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center" dir="ltr" onClick={handleClose}>
       <audio ref={audioRef} src={storyAudio} preload="auto" />
 
-      <div className="absolute inset-0 flex items-center justify-center">
+      <div className="relative w-full max-w-md mx-auto h-[85vh] rounded-2xl overflow-hidden animate-story-zoom shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <img
           src={storyImage}
           alt="Story"
-          className="max-w-full max-h-full object-contain animate-story-zoom"
+          className="w-full h-full object-cover"
           data-testid="story-image"
         />
-      </div>
 
-      <div className="absolute top-0 left-0 right-0 z-20 px-3 pt-3 safe-area-top bg-gradient-to-b from-black/50 to-transparent pb-12">
-        <div className="h-[3px] bg-white/25 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-white rounded-full transition-none"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-
-        <div className="flex items-center justify-between mt-3 px-1">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-full overflow-hidden ring-2 ring-white/40">
-              <img src={PROFILE.avatarUrl} alt={PROFILE.name} className="w-full h-full object-cover" />
-            </div>
-            <span className="text-white text-sm font-semibold drop-shadow-lg">{PROFILE.name}</span>
+        <div className="absolute top-0 left-0 right-0 z-20 px-3 pt-3 bg-gradient-to-b from-black/60 via-black/20 to-transparent pb-16">
+          <div className="h-[3px] bg-white/25 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-white rounded-full transition-none"
+              style={{ width: `${progress}%` }}
+            />
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={toggleMute}
-              data-testid="button-story-mute"
-              className="w-9 h-9 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center active:scale-90 transition-transform"
-            >
-              {isMuted ? (
-                <VolumeX className="w-4 h-4 text-white" />
-              ) : (
-                <Volume2 className="w-4 h-4 text-white" />
-              )}
-            </button>
-            <button
-              onClick={handleClose}
-              data-testid="button-story-close"
-              className="w-9 h-9 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center active:scale-90 transition-transform"
-            >
-              <X className="w-4 h-4 text-white" />
-            </button>
+
+          <div className="flex items-center justify-between mt-3 px-1">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-white/40">
+                <img src={PROFILE.avatarUrl} alt={PROFILE.name} className="w-full h-full object-cover" />
+              </div>
+              <span className="text-white text-sm font-semibold drop-shadow-lg">{PROFILE.name}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={toggleMute}
+                data-testid="button-story-mute"
+                className="w-8 h-8 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center active:scale-90 transition-transform"
+              >
+                {isMuted ? (
+                  <VolumeX className="w-4 h-4 text-white" />
+                ) : (
+                  <Volume2 className="w-4 h-4 text-white" />
+                )}
+              </button>
+              <button
+                onClick={handleClose}
+                data-testid="button-story-close"
+                className="w-8 h-8 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center active:scale-90 transition-transform"
+              >
+                <X className="w-4 h-4 text-white" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -333,6 +333,40 @@ export default function Home() {
     }
   }, []);
 
+  useEffect(() => {
+    const playWelcomeChime = () => {
+      try {
+        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const notes = [523.25, 659.25, 783.99, 1046.5];
+        notes.forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = "sine";
+          osc.frequency.value = freq;
+          gain.gain.setValueAtTime(0, ctx.currentTime + i * 0.12);
+          gain.gain.linearRampToValueAtTime(0.08, ctx.currentTime + i * 0.12 + 0.05);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.12 + 0.6);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(ctx.currentTime + i * 0.12);
+          osc.stop(ctx.currentTime + i * 0.12 + 0.6);
+        });
+      } catch {}
+    };
+
+    const handler = () => {
+      playWelcomeChime();
+      document.removeEventListener("click", handler);
+      document.removeEventListener("touchstart", handler);
+    };
+    document.addEventListener("click", handler, { once: true });
+    document.addEventListener("touchstart", handler, { once: true });
+    return () => {
+      document.removeEventListener("click", handler);
+      document.removeEventListener("touchstart", handler);
+    };
+  }, []);
+
   return (
     <div className="min-h-screen bg-background selection:bg-primary/20 transition-colors duration-500" dir="rtl">
       {showStory && (
@@ -361,7 +395,7 @@ export default function Home() {
         <img
           src={profile.bannerUrl}
           alt="banner"
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover animate-banner-reveal"
           data-testid="profile-banner"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
@@ -382,7 +416,7 @@ export default function Home() {
                 {profile.name}
               </h1>
               {profile.isVerified && (
-                <BadgeCheck className="w-5 h-5 text-primary fill-primary/20" />
+                <BadgeCheck className="w-[18px] h-[18px] text-primary fill-primary/20" />
               )}
             </div>
           </div>
