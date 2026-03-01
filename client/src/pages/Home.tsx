@@ -210,11 +210,20 @@ function StoryViewer({ storyImage, storyAudio, onClose }: { storyImage: string; 
   };
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black flex items-center justify-center" onClick={handleClose}>
+    <div className="fixed inset-0 z-[100] bg-black" dir="ltr">
       <audio ref={audioRef} src={storyAudio} preload="auto" />
 
-      <div className="absolute top-0 left-0 right-0 z-20 px-3 pt-3 safe-area-top">
-        <div className="h-[3px] bg-white/20 rounded-full overflow-hidden">
+      <div className="absolute inset-0 flex items-center justify-center">
+        <img
+          src={storyImage}
+          alt="Story"
+          className="max-w-full max-h-full object-contain animate-story-zoom"
+          data-testid="story-image"
+        />
+      </div>
+
+      <div className="absolute top-0 left-0 right-0 z-20 px-3 pt-3 safe-area-top bg-gradient-to-b from-black/50 to-transparent pb-12">
+        <div className="h-[3px] bg-white/25 rounded-full overflow-hidden">
           <div
             className="h-full bg-white rounded-full transition-none"
             style={{ width: `${progress}%` }}
@@ -222,17 +231,17 @@ function StoryViewer({ storyImage, storyAudio, onClose }: { storyImage: string; 
         </div>
 
         <div className="flex items-center justify-between mt-3 px-1">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-white/30">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-full overflow-hidden ring-2 ring-white/40">
               <img src={PROFILE.avatarUrl} alt={PROFILE.name} className="w-full h-full object-cover" />
             </div>
-            <span className="text-white text-sm font-medium">{PROFILE.name}</span>
+            <span className="text-white text-sm font-semibold drop-shadow-lg">{PROFILE.name}</span>
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={toggleMute}
               data-testid="button-story-mute"
-              className="w-9 h-9 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center active:scale-90 transition-transform"
+              className="w-9 h-9 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center active:scale-90 transition-transform"
             >
               {isMuted ? (
                 <VolumeX className="w-4 h-4 text-white" />
@@ -243,21 +252,12 @@ function StoryViewer({ storyImage, storyAudio, onClose }: { storyImage: string; 
             <button
               onClick={handleClose}
               data-testid="button-story-close"
-              className="w-9 h-9 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center active:scale-90 transition-transform"
+              className="w-9 h-9 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center active:scale-90 transition-transform"
             >
               <X className="w-4 h-4 text-white" />
             </button>
           </div>
         </div>
-      </div>
-
-      <div className="w-full h-full max-w-lg mx-auto flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
-        <img
-          src={storyImage}
-          alt="Story"
-          className="w-full h-full object-contain animate-story-zoom"
-          data-testid="story-image"
-        />
       </div>
     </div>
   );

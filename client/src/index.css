@@ -3,9 +3,12 @@
 @tailwind utilities;
 
 .font-arabic {
-  font-family: 'Noto Naskh Arabic', serif;
-  font-weight: 600;
-  letter-spacing: 0.02em;
+  font-family: 'Tajawal', sans-serif;
+  font-weight: 700;
+}
+
+body {
+  font-family: 'Tajawal', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 @keyframes story-zoom {
@@ -37,32 +40,32 @@
   --sidebar: 0 0% 96%;
   --sidebar-foreground: 0 0% 9%;
   --sidebar-border: 0 0% 93%;
-  --sidebar-primary: 262 83% 58%;
+  --sidebar-primary: 174 50% 42%;
   --sidebar-primary-foreground: 0 0% 98%;
-  --sidebar-accent: 0 0% 92%;
+  --sidebar-accent: 170 15% 90%;
   --sidebar-accent-foreground: 0 0% 9%;
-  --sidebar-ring: 262 83% 58%;
+  --sidebar-ring: 174 50% 42%;
   --popover: 0 0% 94%;
   --popover-foreground: 0 0% 9%;
   --popover-border: 0 0% 91%;
-  --primary: 262 83% 58%;
+  --primary: 174 50% 42%;
   --primary-foreground: 0 0% 98%;
-  --secondary: 0 0% 90%;
+  --secondary: 170 10% 90%;
   --secondary-foreground: 0 0% 9%;
-  --muted: 0 0% 92%;
+  --muted: 170 8% 92%;
   --muted-foreground: 0 0% 40%;
-  --accent: 262 12% 88%;
+  --accent: 174 12% 88%;
   --accent-foreground: 0 0% 9%;
   --destructive: 0 84% 45%;
   --destructive-foreground: 0 0% 98%;
   --input: 0 0% 70%;
-  --ring: 262 83% 58%;
-  --chart-1: 262 83% 48%;
-  --chart-2: 210 92% 45%;
-  --chart-3: 173 80% 40%;
-  --chart-4: 43 96% 56%;
-  --chart-5: 27 87% 55%;
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --ring: 174 50% 42%;
+  --chart-1: 174 50% 42%;
+  --chart-2: 180 40% 45%;
+  --chart-3: 160 50% 40%;
+  --chart-4: 190 45% 50%;
+  --chart-5: 170 55% 35%;
+  --font-sans: 'Tajawal', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-serif: Georgia, serif;
   --font-mono: 'JetBrains Mono', Menlo, monospace;
   --radius: .5rem;
@@ -121,31 +124,31 @@
   --sidebar: 0 0% 11%;
   --sidebar-foreground: 0 0% 98%;
   --sidebar-border: 0 0% 14%;
-  --sidebar-primary: 262 83% 58%;
+  --sidebar-primary: 174 50% 42%;
   --sidebar-primary-foreground: 0 0% 98%;
-  --sidebar-accent: 0 0% 15%;
+  --sidebar-accent: 170 10% 15%;
   --sidebar-accent-foreground: 0 0% 98%;
-  --sidebar-ring: 262 83% 58%;
+  --sidebar-ring: 174 50% 42%;
   --popover: 0 0% 13%;
   --popover-foreground: 0 0% 98%;
   --popover-border: 0 0% 16%;
-  --primary: 262 83% 58%;
+  --primary: 174 50% 42%;
   --primary-foreground: 0 0% 98%;
-  --secondary: 0 0% 17%;
+  --secondary: 170 8% 17%;
   --secondary-foreground: 0 0% 98%;
-  --muted: 0 0% 16%;
+  --muted: 170 6% 16%;
   --muted-foreground: 0 0% 65%;
-  --accent: 262 12% 18%;
+  --accent: 174 12% 18%;
   --accent-foreground: 0 0% 98%;
   --destructive: 0 84% 45%;
   --destructive-foreground: 0 0% 98%;
   --input: 0 0% 30%;
-  --ring: 262 83% 58%;
-  --chart-1: 262 83% 68%;
-  --chart-2: 210 92% 65%;
-  --chart-3: 173 80% 60%;
-  --chart-4: 43 96% 66%;
-  --chart-5: 27 87% 65%;
+  --ring: 174 50% 42%;
+  --chart-1: 174 50% 55%;
+  --chart-2: 180 40% 55%;
+  --chart-3: 160 50% 50%;
+  --chart-4: 190 45% 60%;
+  --chart-5: 170 55% 45%;
   --shadow-2xs: 0px 2px 0px 0px hsl(0 0% 0% / 0.00);
   --shadow-xs: 0px 2px 0px 0px hsl(0 0% 0% / 0.00);
   --shadow-sm: 0px 2px 0px 0px hsl(0 0% 0% / 0.00), 0px 1px 2px -1px hsl(0 0% 0% / 0.00);
@@ -222,7 +225,7 @@
 }
 
 .story-ring {
-  background: linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045, #833ab4, #405de6);
+  background: linear-gradient(135deg, #2d9a8f, #1a7a6d, #3db8a9, #1a6b5a, #2d9a8f);
   background-size: 300% 300%;
   animation: story-spin 3s ease infinite;
 }
@@ -294,7 +297,7 @@
   height: 300px;
   top: 10%;
   left: 15%;
-  background: hsl(262, 83%, 58%);
+  background: hsl(174, 50%, 42%);
   animation: float-1 20s ease-in-out infinite;
 }
 
@@ -303,7 +306,7 @@
   height: 250px;
   top: 40%;
   right: 10%;
-  background: hsl(210, 92%, 55%);
+  background: hsl(185, 45%, 50%);
   animation: float-2 25s ease-in-out infinite;
 }
 
@@ -312,7 +315,7 @@
   height: 200px;
   bottom: 20%;
   left: 30%;
-  background: hsl(340, 80%, 55%);
+  background: hsl(160, 40%, 45%);
   animation: float-3 18s ease-in-out infinite;
 }
 
@@ -321,7 +324,7 @@
   height: 180px;
   top: 60%;
   left: 5%;
-  background: hsl(43, 96%, 56%);
+  background: hsl(190, 50%, 48%);
   animation: float-2 22s ease-in-out infinite reverse;
 }
 
@@ -330,7 +333,7 @@
   height: 220px;
   top: 20%;
   right: 25%;
-  background: hsl(173, 80%, 45%);
+  background: hsl(170, 55%, 40%);
   animation: float-1 28s ease-in-out infinite reverse;
 }
 
