@@ -195,6 +195,19 @@
  * Even without handling focused or not, this is six possible combinations that
  * need to be distinguished from eachother visually.
  */
+/* Story Ring Animation */
+@keyframes story-spin {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.story-ring {
+  background: linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045, #833ab4, #405de6);
+  background-size: 300% 300%;
+  animation: story-spin 3s ease infinite;
+}
+
 @layer utilities {
 
   /* Hide ugly search cancel button in Chrome until we can style it properly */

@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
+import { storage } from "./storage";
 
 const app = express();
 const httpServer = createServer(app);
@@ -59,8 +60,56 @@ app.use((req, res, next) => {
   next();
 });
 
+async function seedData() {
+  try {
+    const existingProfile = await storage.getProfile();
+    if (!existingProfile) {
+      await storage.updateProfile({
+        name: "محمد العمري",
+        username: "@m_alomari",
+        bio: "مطور تطبيقات ومصمم جرافيك، أعشق التقنية وأسعى دائمًا لصنع تجارب رقمية مميزة. بني موقعك الشخصي بأسلوب احترافي.",
+        bannerUrl: "/images/banner.png",
+        avatarUrl: "/images/avatar-default.png",
+        hasStory: true,
+        location: "الرياض، المملكة العربية السعودية",
+        website: "https://example.com",
+        isVerified: true,
+      });
+    }
+
+    const existingLinks = await storage.getSocialLinks();
+    if (existingLinks.length === 0) {
+      await storage.createSocialLink({ platform: "instagram", url: "https://instagram.com", displayName: "@m_alomari", icon: "instagram", color: "#E1306C", sortOrder: 1 });
+      await storage.createSocialLink({ platform: "x", url: "https://x.com", displayName: "@m_alomari", icon: "x", color: "#000000", sortOrder: 2 });
+      await storage.createSocialLink({ platform: "tiktok", url: "https://tiktok.com", displayName: "@m_alomari", icon: "tiktok", color: "#010101", sortOrder: 3 });
+      await storage.createSocialLink({ platform: "snapchat", url: "https://snapchat.com", displayName: "m_alomari", icon: "snapchat", color: "#FFFC00", sortOrder: 4 });
+    }
+
+    const existingPosts = await storage.getPosts();
+    if (existingPosts.length === 0) {
+      await storage.createPost({
+        title: "مرحبًا بكم في موقعي الجديد",
+        content: "يسعدني إطلاق موقعي الشخصي الجديد، سأشارككم هنا آخر أخباري ومشاريعي وتجاربي في عالم التقنية والتصميم. ابقوا على اطلاع!",
+        imageUrl: null,
+        isPinned: true,
+      });
+      await storage.createPost({
+        title: "مشروع جديد قيد التطوير",
+        content: "أعمل حاليًا على مشروع تقني مثير سيرى النور قريبًا. المشروع يجمع بين الذكاء الاصطناعي وتجربة المستخدم الحديثة. تابعوا حساباتي لمزيد من التفاصيل.",
+        imageUrl: null,
+        isPinned: false,
+      });
+    }
+
+    log("Seed data checked/applied", "seed");
+  } catch (err) {
+    log(`Seed error: ${err}`, "seed");
+  }
+}
+
 (async () => {
   await registerRoutes(httpServer, app);
+  await seedData();
 
   app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
@@ -75,9 +124,6 @@ app.use((req, res, next) => {
     return res.status(status).json({ message });
   });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
   if (process.env.NODE_ENV === "production") {
     serveStatic(app);
   } else {
@@ -85,10 +131,6 @@ app.use((req, res, next) => {
     await setupVite(httpServer, app);
   }
 
-  // ALWAYS serve the app on the port specified in the environment variable PORT
-  // Other ports are firewalled. Default to 5000 if not specified.
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
   const port = parseInt(process.env.PORT || "5000", 10);
   httpServer.listen(
     {
