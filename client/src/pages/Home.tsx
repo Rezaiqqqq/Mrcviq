@@ -391,8 +391,6 @@ export default function Home() {
   const profile = PROFILE;
   const socialLinks = SOCIAL_LINKS;
 
-  const [isLoading, setIsLoading] = useState(true);
-  const finishLoading = useCallback(() => setIsLoading(false), []);
   const [visitorCount, setVisitorCount] = useState(0);
   const [showStory, setShowStory] = useState(false);
   const closeStory = useCallback(() => setShowStory(false), []);
@@ -443,10 +441,6 @@ export default function Home() {
       document.removeEventListener("touchstart", handler);
     };
   }, []);
-
-  if (isLoading) {
-    return <LoadingScreen onFinish={finishLoading} />;
-  }
 
   return (
     <div className="min-h-screen bg-background selection:bg-primary/20 transition-colors duration-500 animate-page-enter" dir="rtl">
