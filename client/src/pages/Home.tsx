@@ -9,8 +9,7 @@ import { HiSpeakerphone } from "react-icons/hi";
 
 const PROFILE = {
   name: "Mohammed Reza",
-  username: "@rezaiq",
-  bio: "مطور ومصمم من العراق، أهتم بالتقنية والإبداع الرقمي",
+  bio: "اللَّهُمَّ عَجِّل لِوَلِيِّكَ الْفَرَج",
   bannerUrl: "/images/banner.jpg",
   avatarUrl: "/images/avatar.jpg",
   hasStory: true,
@@ -25,7 +24,7 @@ const SOCIAL_LINKS = [
   { id: 2, platform: "tiktok", url: "https://tiktok.com/@rezaiq.313", displayName: "rezaiq.313", icon: "tiktok", color: "#010101" },
   { id: 3, platform: "telegram", url: "https://t.me/Rezaiqq", displayName: "Rezaiqq", icon: "telegram", color: "#2CA5E0" },
   { id: 4, platform: "facebook", url: "https://www.facebook.com/share/1DjvaVj8Br/", displayName: "Mohammed", icon: "facebook", color: "#1877F2" },
-  { id: 5, platform: "discord", url: "#", displayName: "m7mdredayt", icon: "discord", color: "#5865F2" },
+  { id: 5, platform: "discord", url: "https://discord.com/users/m7mdredayt", displayName: "m7mdredayt", icon: "discord", color: "#5865F2" },
   { id: 6, platform: "store", url: "https://t.me/ReStoiq", displayName: "متجري", icon: "store", color: "#FF6B35" },
   { id: 7, platform: "channel", url: "https://t.me/reza_iiq", displayName: "قناتي", icon: "channel", color: "#8B5CF6" },
 ];
@@ -179,21 +178,18 @@ function SocialIcon({ link, index }: { link: typeof SOCIAL_LINKS[0]; index: numb
       target="_blank"
       rel="noopener noreferrer"
       data-testid={`social-link-${link.id}`}
-      className="group flex flex-col items-center gap-2 animate-fade-up"
+      className="group flex items-center justify-center animate-fade-up"
       style={{ animationDelay: `${80 * index}ms` }}
     >
       <div
-        className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:scale-105 group-active:scale-95 social-icon-glass"
+        className="relative w-16 h-16 sm:w-[72px] sm:h-[72px] rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-active:scale-95 social-icon-glass"
         style={{
           background: `linear-gradient(135deg, ${link.color}18, ${link.color}08)`,
           boxShadow: `0 0 0 1px ${link.color}15, 0 4px 24px ${link.color}10`,
         }}
       >
-        <Icon className="w-6 h-6 sm:w-7 sm:h-7 transition-all duration-300 group-hover:scale-110" style={{ color: iconColor }} />
+        <Icon className="w-7 h-7 sm:w-8 sm:h-8 transition-all duration-300 group-hover:scale-110" style={{ color: iconColor }} />
       </div>
-      <span className="text-[11px] sm:text-xs text-muted-foreground font-medium group-hover:text-foreground transition-colors duration-200">
-        {link.displayName}
-      </span>
     </a>
   );
 }
@@ -271,14 +267,11 @@ export default function Home() {
                 <BadgeCheck className="w-5 h-5 text-primary fill-primary/20" />
               )}
             </div>
-            <p className="text-sm text-muted-foreground font-medium" data-testid="profile-username">
-              {profile.username}
-            </p>
           </div>
 
           {profile.bio && (
             <p
-              className="mt-4 text-[13px] sm:text-sm text-muted-foreground leading-relaxed max-w-sm animate-fade-up"
+              className="mt-4 text-base sm:text-lg text-foreground/80 leading-relaxed max-w-sm animate-fade-up font-arabic"
               style={{ animationDelay: "150ms" }}
               data-testid="profile-bio"
             >
