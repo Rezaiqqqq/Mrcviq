@@ -395,22 +395,41 @@ export default function Home() {
 
       <div className="relative w-full h-48 sm:h-64 md:h-80 overflow-hidden">
         <img
-          src={theme === "dark" ? profile.bannerDarkUrl : profile.bannerUrl}
-          alt="banner"
-          className="w-full h-full object-cover animate-banner-reveal"
+          src={profile.bannerUrl}
+          alt="banner light"
+          className="absolute inset-0 w-full h-full object-cover theme-crossfade"
+          style={{ opacity: theme === "dark" ? 0 : 1 }}
+        />
+        <img
+          src={profile.bannerDarkUrl}
+          alt="banner dark"
+          className="absolute inset-0 w-full h-full object-cover theme-crossfade"
+          style={{ opacity: theme === "dark" ? 1 : 0 }}
           data-testid="profile-banner"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent theme-crossfade" />
       </div>
 
       <div className="relative z-10 max-w-lg mx-auto px-5 pb-20">
         <div className="-mt-16 sm:-mt-20 mb-6 flex flex-col items-center text-center">
-          <StoryAvatar
-            src={theme === "dark" ? profile.avatarDarkUrl : profile.avatarUrl}
-            name={profile.name}
-            hasStory={profile.hasStory}
-            onStoryClick={() => setShowStory(true)}
-          />
+          <div className="relative">
+            <div className="theme-crossfade" style={{ opacity: theme === "dark" ? 0 : 1, position: theme === "dark" ? "absolute" : "relative", inset: 0 }}>
+              <StoryAvatar
+                src={profile.avatarUrl}
+                name={profile.name}
+                hasStory={profile.hasStory}
+                onStoryClick={() => setShowStory(true)}
+              />
+            </div>
+            <div className="theme-crossfade" style={{ opacity: theme === "dark" ? 1 : 0, position: theme === "dark" ? "relative" : "absolute", inset: 0 }}>
+              <StoryAvatar
+                src={profile.avatarDarkUrl}
+                name={profile.name}
+                hasStory={profile.hasStory}
+                onStoryClick={() => setShowStory(true)}
+              />
+            </div>
+          </div>
 
           <div className="mt-5 space-y-1 animate-fade-up" style={{ animationDelay: "100ms" }}>
             <div className="flex items-center justify-center">
